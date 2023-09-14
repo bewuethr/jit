@@ -5,6 +5,7 @@ require "pathname"
 
 require_relative "../lib/database"
 require_relative "../lib/entry"
+require_relative "../lib/index"
 require_relative "../lib/refs"
 require_relative "../lib/workspace"
 
@@ -61,6 +62,25 @@ when "commit"
 
   is_root = parent.nil? ? "(root-commit) " : ""
   puts "[#{is_root}#{commit.oid}] #{message.lines.first}"
+  exit 0
+
+when "add"
+  root_path = Pathname.new(Dir.getwd)
+  git_path = root_path.join(".git")
+
+  workspace = Workspace.new(root_path)
+  database = Database.new(git_path.join("objects"))
+  index = Index.new(git_path.join("index"))
+
+  path = Pathname.new(ARGV.first)
+  data = workspace.read_file(path)
+  stat = workspace.stat_file(path)
+
+  blob = Database::Blob.new(data)
+  database.store(blob)
+  index.add(path, blob.oid, stat)
+
+  index.write_updates
   exit 0
 
 else
