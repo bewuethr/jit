@@ -31,5 +31,9 @@ class Index
       string.concat("\0") until string.bytesize % ENTRY_BLOCK == 0
       string
     end
+
+    def key
+      path
+    end
   end
 end
