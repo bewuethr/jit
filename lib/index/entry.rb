@@ -2,8 +2,10 @@ class Index
   REGULAR_MODE = 0o100644
   EXECUTABLE_MODE = 0o100755
   MAX_PATH_SIZE = 0xfff
+
   ENTRY_FORMAT = "N10H40nZ*"
   ENTRY_BLOCK = 8
+  ENTRY_MIN_SIZE = 64
 
   entry_fields = [
     :ctime, :ctime_nsec,
@@ -24,6 +26,10 @@ class Index
         stat.dev, stat.ino, mode, stat.uid, stat.gid, stat.size,
         oid, flags, path
       )
+    end
+
+    def self.parse(data)
+      Entry.new(*data.unpack(ENTRY_FORMAT))
     end
 
     def to_s

@@ -37,9 +37,17 @@ class Lockfile
     @lock = nil
   end
 
+  def rollback
+    raise_on_stale_lock
+
+    @lock.close
+    File.unlink(@lock_path)
+    @lock = nil
+  end
+
   private def raise_on_stale_lock
     unless @lock
-      raise StaleLock "Not holding lock on file: #{@lock_path}"
+      raise StaleLock, "Not holding lock on file: #{@lock_path}"
     end
   end
 end
