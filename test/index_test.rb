@@ -26,4 +26,23 @@ class TestIndex < Minitest::Test
 
     assert_equal(["alice.txt/nested.txt", "bob.txt"], @index.each_entry.map(&:path))
   end
+
+  def test_replace_directory_with_file
+    @index.add("alice.txt", @oid, @stat)
+    @index.add("nested/bob.txt", @oid, @stat)
+
+    @index.add("nested", @oid, @stat)
+
+    assert_equal(["alice.txt", "nested"], @index.each_entry.map(&:path))
+  end
+
+  def test_recursively_replace_directory_with_file
+    @index.add("alice.txt", @oid, @stat)
+    @index.add("nested/bob.txt", @oid, @stat)
+    @index.add("nested/inner/claire.txt", @oid, @stat)
+
+    @index.add("nested", @oid, @stat)
+
+    assert_equal(["alice.txt", "nested"], @index.each_entry.map(&:path))
+  end
 end
