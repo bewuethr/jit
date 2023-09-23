@@ -1,5 +1,6 @@
 class Workspace
   MissingFile = Class.new(StandardError)
+  NoPermission = Class.new(StandardError)
 
   IGNORE = [".", "..", ".git"]
 
@@ -22,9 +23,13 @@ class Workspace
 
   def read_file(path)
     File.read(@pathname.join(path))
+  rescue Errno::EACCES
+    raise NoPermission, "open('#{path}'): Permission denied"
   end
 
   def stat_file(path)
     File.stat(@pathname.join(path))
+  rescue Errno::EACCES
+    raise NoPermission, "stat('#{path}'): Permission denied"
   end
 end

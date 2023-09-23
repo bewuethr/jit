@@ -77,13 +77,20 @@ when "add"
     exit 128
   end
 
-  paths.each do |path|
-    data = workspace.read_file(path)
-    stat = workspace.stat_file(path)
+  begin
+    paths.each do |path|
+      data = workspace.read_file(path)
+      stat = workspace.stat_file(path)
 
-    blob = Database::Blob.new(data)
-    database.store(blob)
-    index.add(path, blob.oid, stat)
+      blob = Database::Blob.new(data)
+      database.store(blob)
+      index.add(path, blob.oid, stat)
+    end
+  rescue Workspace::NoPermission => error
+    warn "error: #{error.message}"
+    warn "fatal: adding files failed"
+    index.release_lock
+    exit 128
   end
 
   index.write_updates
