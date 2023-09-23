@@ -16,6 +16,14 @@ class TestIndex < Minitest::Test
 
   def test_add_single_file
     @index.add("alice.txt", @oid, @stat)
-    assert_equal(["alice.txtx"], @index.each_entry.map(&:path))
+    assert_equal(["alice.txt"], @index.each_entry.map(&:path))
+  end
+
+  def test_replace_file_with_directory
+    @index.add("alice.txt", @oid, @stat)
+    @index.add("bob.txt", @oid, @stat)
+    @index.add("alice.txt/nested.txt", @oid, @stat)
+
+    assert_equal(["alice.txt/nested.txt", "bob.txt"], @index.each_entry.map(&:path))
   end
 end

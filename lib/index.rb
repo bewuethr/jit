@@ -85,8 +85,16 @@ class Index
 
   def add(pathname, oid, stat)
     entry = Entry.create(pathname, oid, stat)
+    discard_conflicts(entry)
     store_entry(entry)
     @changed = true
+  end
+
+  def discard_conflicts(entry)
+    entry.parent_directories.each do |dirname|
+      @keys.delete(dirname.to_s)
+      @entries.delete(dirname.to_s)
+    end
   end
 
   def each_entry
