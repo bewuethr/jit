@@ -2,6 +2,7 @@ class Lockfile
   MissingParent = Class.new(StandardError)
   NoPermission = Class.new(StandardError)
   StaleLock = Class.new(StandardError)
+  LockDenied = Class.new(StandardError)
 
   def initialize(path)
     @file_path = path
@@ -15,9 +16,8 @@ class Lockfile
       flags = File::RDWR | File::CREAT | File::EXCL
       @lock = File.open(@lock_path, flags)
     end
-    true
   rescue Errno::EEXIST
-    false
+    raise LockDenied, "Unable to create '#{@lock_path}': File exists."
   rescue Errno::ENOENT => error
     raise MissingParent, error.message
   rescue Errno::EACCES => error
