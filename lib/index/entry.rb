@@ -32,6 +32,14 @@ class Index
       Entry.new(*data.unpack(ENTRY_FORMAT))
     end
 
+    def parent_directories
+      Pathname.new(path).descend.to_a[0..-2]
+    end
+
+    def basename
+      Pathname.new(path).basename
+    end
+
     def to_s
       string = to_a.pack(ENTRY_FORMAT)
       string.concat("\0") until string.bytesize % ENTRY_BLOCK == 0
