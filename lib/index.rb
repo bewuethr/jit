@@ -143,4 +143,8 @@ class Index
 
     @changed = false
   end
+
+  def release_lock
+    @lockfile.rollback
+  end
 end

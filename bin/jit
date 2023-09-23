@@ -66,17 +66,24 @@ when "add"
 
   index.load_for_update
 
-  ARGV.each do |path|
-    path = Pathname.new(File.expand_path(path))
-
-    workspace.list_files(path).each do |pathname|
-      data = workspace.read_file(pathname)
-      stat = workspace.stat_file(pathname)
-
-      blob = Database::Blob.new(data)
-      database.store(blob)
-      index.add(pathname, blob.oid, stat)
+  begin
+    paths = ARGV.flat_map do |path|
+      path = Pathname.new(File.expand_path(path))
+      workspace.list_files(path)
     end
+  rescue Workspace::MissingFile => error
+    warn "fatal: #{error.message}"
+    index.release_lock
+    exit 128
+  end
+
+  paths.each do |path|
+    data = workspace.read_file(path)
+    stat = workspace.stat_file(path)
+
+    blob = Database::Blob.new(data)
+    database.store(blob)
+    index.add(path, blob.oid, stat)
   end
 
   index.write_updates
