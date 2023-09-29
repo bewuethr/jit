@@ -12,7 +12,7 @@ module Command
       begin
         repo.index.load_for_update
       rescue Lockfile::LockDenied => error
-        warn <<~EOF
+        @stderr.puts <<~EOF
           fatal: #{error.message}
 
           Another jit process seems to be running in this repository.
