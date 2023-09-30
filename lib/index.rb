@@ -143,4 +143,8 @@ class Index
   def release_lock
     @lockfile.rollback
   end
+
+  def tracked?(path)
+    @entries.has_key?(path.to_s) or @parents.has_key?(path.to_s)
+  end
 end
