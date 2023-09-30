@@ -16,6 +16,10 @@ module Command
       @stderr = stderr
     end
 
+    def repo
+      @repo ||= Repository.new(Pathname.new(@dir).join(".git"))
+    end
+
     def execute
       catch(:exit) { run }
     end
