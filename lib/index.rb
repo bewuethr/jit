@@ -140,6 +140,11 @@ class Index
     @changed = false
   end
 
+  def update_entry_stat(entry, stat)
+    entry.update_stat(stat)
+    @changed = true
+  end
+
   def release_lock
     @lockfile.rollback
   end

@@ -111,4 +111,10 @@ class Command::TestStatusIndexWorkspace < Command::TestStatus
       \ M a/b/3.txt
     EOF
   end
+
+  def test_print_nothing_if_file_is_touched
+    touch("1.txt")
+
+    assert_status("")
+  end
 end
