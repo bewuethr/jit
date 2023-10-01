@@ -70,3 +70,37 @@ class Command::TestStatus < Minitest::Test
     EOF
   end
 end
+
+class Command::TestStatusIndexWorkspace < Command::TestStatus
+  def setup
+    super
+    write_file("1.txt", "one")
+    write_file("a/2.txt", "two")
+    write_file("a/b/3.txt", "three")
+
+    jit_cmd("add", ".")
+    commit("commit message")
+  end
+
+  def test_print_nothing_when_no_changes
+    assert_status("")
+  end
+
+  def test_report_files_with_modified_contents
+    write_file("1.txt", "changed")
+    write_file("a/2.txt", "modified")
+
+    assert_status <<~EOF
+      \ M 1.txt
+      \ M a/2.txt
+    EOF
+  end
+
+  def test_report_files_with_changed_mode
+    make_executable("a/2.txt")
+
+    assert_status <<~EOF
+      \ M a/2.txt
+    EOF
+  end
+end

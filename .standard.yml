@@ -1,0 +1,4 @@
+ruby_version: 3.2.2
+ignore:
+  - test/command/status_test.rb:
+      - Style/RedundantStringEscape
