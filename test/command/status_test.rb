@@ -103,4 +103,12 @@ class Command::TestStatusIndexWorkspace < Command::TestStatus
       \ M a/2.txt
     EOF
   end
+
+  def test_report_changed_file_with_same_size
+    write_file("a/b/3.txt", "hello")
+
+    assert_status <<~EOF
+      \ M a/b/3.txt
+    EOF
+  end
 end
