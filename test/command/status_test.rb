@@ -117,4 +117,21 @@ class Command::TestStatusIndexWorkspace < Command::TestStatus
 
     assert_status("")
   end
+
+  def test_report_deleted_file
+    delete("a/2.txt")
+
+    assert_status <<~EOF
+      \ D a/2.txt
+    EOF
+  end
+
+  def test_report_files_in_deleted_directories
+    delete("a")
+
+    assert_status <<~EOF
+      \ D a/2.txt
+      \ D a/b/3.txt
+    EOF
+  end
 end
