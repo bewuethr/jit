@@ -1,6 +1,26 @@
 class Database
   class Commit
     attr_accessor :oid
+    attr_reader :tree
+
+    def self.parse(scanner)
+      headers = {}
+
+      loop do
+        line = scanner.scan_until(/\n/).strip
+        break if line.empty?
+
+        key, value = line.split(/ +/, 2)
+        headers[key] = value
+      end
+
+      Commit.new(
+        headers["parent"],
+        headers["tree"],
+        headers["author"],
+        scanner.rest
+      )
+    end
 
     def initialize(parent, tree, author, message)
       @parent = parent
