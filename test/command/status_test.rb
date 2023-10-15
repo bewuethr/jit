@@ -164,4 +164,22 @@ class Command::TestStatusHeadIndex < Command::TestStatus
       A  d/e/5.txt
     EOF
   end
+
+  def test_report_modified_modes
+    make_executable("1.txt")
+    jit_cmd("add", ".")
+
+    assert_status <<~EOF
+      M  1.txt
+    EOF
+  end
+
+  def test_report_modified_contents
+    write_file("a/b/3.txt", "changed")
+    jit_cmd("add", ".")
+
+    assert_status <<~EOF
+      M  a/b/3.txt
+    EOF
+  end
 end
