@@ -135,3 +135,33 @@ class Command::TestStatusIndexWorkspace < Command::TestStatus
     EOF
   end
 end
+
+class Command::TestStatusHeadIndex < Command::TestStatus
+  def setup
+    super
+    write_file("1.txt", "one")
+    write_file("a/2.txt", "two")
+    write_file("a/b/3.txt", "three")
+
+    jit_cmd("add", ".")
+    commit("first commit")
+  end
+
+  def test_report_file_added_to_tracked_directory
+    write_file("a/4.txt", "four")
+    jit_cmd("add", ".")
+
+    assert_status <<~EOF
+      A  a/4.txt
+    EOF
+  end
+
+  def test_report_file_added_to_untracked_directory
+    write_file("d/e/5.txt", "five")
+    jit_cmd("add", ".")
+
+    assert_status <<~EOF
+      A  d/e/5.txt
+    EOF
+  end
+end
