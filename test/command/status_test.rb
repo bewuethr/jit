@@ -6,7 +6,7 @@ class Command::TestStatus < Minitest::Test
   include CommandHelper
 
   def assert_status(output)
-    jit_cmd("status")
+    jit_cmd("status", "--porcelain")
     assert_stdout(output)
   end
 
