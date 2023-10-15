@@ -182,4 +182,25 @@ class Command::TestStatusHeadIndex < Command::TestStatus
       M  a/b/3.txt
     EOF
   end
+
+  def test_report_deleted_files
+    delete("1.txt")
+    delete(".git/index")
+    jit_cmd("add", ".")
+
+    assert_status <<~EOF
+      D  1.txt
+    EOF
+  end
+
+  def test_report_all_files_in_deleted_directory
+    delete("a")
+    delete(".git/index")
+    jit_cmd("add", ".")
+
+    assert_status <<~EOF
+      D  a/2.txt
+      D  a/b/3.txt
+    EOF
+  end
 end
