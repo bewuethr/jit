@@ -1,6 +1,7 @@
 require "sorted_set"
 
 require_relative "base"
+require_relative "../sorted_hash"
 
 module Command
   class Status < Base
@@ -13,7 +14,7 @@ module Command
     LABEL_WIDTH = 12
 
     LONG_STATUS = {
-      added: "new file",
+      added: "new file:",
       deleted: "deleted:",
       modified: "modified:"
     }
@@ -21,8 +22,8 @@ module Command
     def run
       @stats = {}
       @changed = SortedSet.new
-      @index_changes = {}
-      @workspace_changes = {}
+      @index_changes = SortedHash.new
+      @workspace_changes = SortedHash.new
       @untracked = SortedSet.new
 
       repo.index.load_for_update

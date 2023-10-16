@@ -10,6 +10,11 @@ class Command::TestStatus < Minitest::Test
     assert_stdout(output)
   end
 
+  def assert_long_status(output)
+    jit_cmd("status")
+    assert_stdout(output)
+  end
+
   def test_list_untracked_files
     write_file("file.txt", "")
     write_file("another.txt", "")
@@ -201,6 +206,23 @@ class Command::TestStatusHeadIndex < Command::TestStatus
     assert_status <<~EOF
       D  a/2.txt
       D  a/b/3.txt
+    EOF
+  end
+
+  def test_report_files_ordered_for_long_format
+    delete("a/2.txt")
+    delete(".git/index")
+    write_file("1.txt", "changed")
+    write_file("z.txt", "new")
+    jit_cmd("add", ".")
+
+    assert_long_status <<~EOF
+      Changes to be committed:
+
+      \tmodified:   1.txt
+      \tdeleted:    a/2.txt
+      \tnew file:   z.txt
+
     EOF
   end
 end
