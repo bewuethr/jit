@@ -1,6 +1,7 @@
 require "sorted_set"
 
 require_relative "base"
+require_relative "../color"
 require_relative "../sorted_hash"
 
 module Command
@@ -173,21 +174,21 @@ module Command
     end
 
     def print_long_format
-      print_changes("Changes to be committed", @index_changes)
-      print_changes("Changes not staged for commit", @workspace_changes)
-      print_changes("Untracked files", @untracked)
+      print_changes("Changes to be committed", @index_changes, :green)
+      print_changes("Changes not staged for commit", @workspace_changes, :red)
+      print_changes("Untracked files", @untracked, :red)
 
       print_commit_status
     end
 
-    def print_changes(message, changeset)
+    def print_changes(message, changeset, style)
       return if changeset.empty?
 
       puts "#{message}:"
       puts ""
       changeset.each do |path, type|
         status = type ? LONG_STATUS[type].ljust(LABEL_WIDTH, " ") : ""
-        puts "\t#{status}#{path}"
+        puts "\t" + fmt(style, status + path)
       end
       puts ""
     end

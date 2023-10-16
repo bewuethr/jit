@@ -31,5 +31,9 @@ module Command
     def puts(string)
       @stdout.puts(string)
     end
+
+    def fmt(style, string)
+      @stdout.isatty ? Color.format(style, string) : string
+    end
   end
 end
