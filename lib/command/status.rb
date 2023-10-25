@@ -75,9 +75,9 @@ module Command
     def print_commit_status
       return if @status.index_changes.any?
 
-      if @workspace_changes.any?
+      if @status.workspace_changes.any?
         puts "no changes added to commit"
-      elsif @untracked.any?
+      elsif @status.untracked.any?
         puts "nothing added to commit but untracked files present"
       else
         puts "nothing to commit, working tree clean"
