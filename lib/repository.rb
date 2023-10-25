@@ -1,6 +1,7 @@
 require_relative "database"
 require_relative "index"
 require_relative "refs"
+require_relative "repository/status"
 require_relative "workspace"
 
 class Repository
@@ -22,5 +23,9 @@ class Repository
 
   def workspace
     @workspace ||= Workspace.new(@git_path.dirname)
+  end
+
+  def status
+    Status.new(self)
   end
 end
