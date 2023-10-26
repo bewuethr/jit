@@ -21,6 +21,21 @@ module CommandHelper
     @repository ||= Repository.new(repo_path.join(".git"))
   end
 
+  def short_index_oid_for(path)
+    index = Index.new(repo_path.join(".git", "index"))
+    index.load
+    entry = index.each_entry.find { |e| e.path == path }
+
+    entry.oid[..6]
+  end
+
+  def short_workspace_oid_for(path)
+    db = Database.new(repo_path.join(".git/objects"))
+    blob = Database::Blob.new(File.read(repo_path.join(path)))
+
+    db.hash_object(blob)[..6]
+  end
+
   def write_file(name, contents)
     path = repo_path.join(name)
     FileUtils.mkdir_p(path.dirname)

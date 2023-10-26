@@ -84,6 +84,10 @@ class Index
     end
   end
 
+  def entry_for_path(path)
+    @entries[path.to_s]
+  end
+
   def add(pathname, oid, stat)
     entry = Entry.create(pathname, oid, stat)
     discard_conflicts(entry)
