@@ -16,22 +16,49 @@ module Command
       repo.index.load
       @status = repo.status
 
+      if @args.first == "--cached"
+        diff_head_index
+      else
+        diff_index_workspace
+      end
+
+      exit 0
+    end
+
+    private def diff_head_index
+      @status.index_changes.each do |path, state|
+        case state
+        when :added then print_diff(from_nothing(path), from_index(path))
+        when :modified then print_diff(from_head(path), from_index(path))
+        when :deleted then print_diff(from_head(path), from_nothing(path))
+        end
+      end
+    end
+
+    private def diff_index_workspace
       @status.workspace_changes.each do |path, state|
         case state
         when :modified then print_diff(from_index(path), from_file(path))
         when :deleted then print_diff(from_index(path), from_nothing(path))
         end
       end
-
-      exit 0
     end
 
-    def from_index(path)
+    private def from_head(path)
+      entry = @status.head_tree.fetch(path)
+      from_entry(path, entry)
+    end
+
+    private def from_index(path)
       entry = repo.index.entry_for_path(path)
+      from_entry(path, entry)
+    end
+
+    private def from_entry(path, entry)
       Target.new(path, entry.oid, entry.mode.to_s(8))
     end
 
-    def from_file(path)
+    private def from_file(path)
       blob = Database::Blob.new(repo.workspace.read_file(path))
       oid = repo.database.hash_object(blob)
       mode = Index::Entry.mode_for_stat(@status.stats[path])
@@ -39,11 +66,11 @@ module Command
       Target.new(path, oid, mode.to_s(8))
     end
 
-    def from_nothing(path)
+    private def from_nothing(path)
       Target.new(path, NULL_OID, nil)
     end
 
-    def print_diff(a, b)
+    private def print_diff(a, b)
       return if a.oid == b.oid && a.mode == b.mode
 
       a.path = Pathname.new("a").join(a.path)
@@ -54,8 +81,10 @@ module Command
       print_diff_content(a, b)
     end
 
-    def print_diff_mode(a, b)
-      if b.mode.nil?
+    private def print_diff_mode(a, b)
+      if a.mode.nil?
+        puts "new file mode #{b.mode}"
+      elsif b.mode.nil?
         puts "deleted file mode #{a.mode}"
       elsif a.mode != b.mode
         puts "old mode #{a.mode}"
@@ -63,7 +92,7 @@ module Command
       end
     end
 
-    def print_diff_content(a, b)
+    private def print_diff_content(a, b)
       return if a.oid == b.oid
 
       oid_range = "index #{short a.oid}..#{short b.oid}"

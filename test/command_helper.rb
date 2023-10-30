@@ -36,6 +36,12 @@ module CommandHelper
     db.hash_object(blob)[..6]
   end
 
+  def short_head_oid_for(path)
+    entry = repo.status.head_tree.fetch(path)
+
+    entry.oid[..6]
+  end
+
   def write_file(name, contents)
     path = repo_path.join(name)
     FileUtils.mkdir_p(path.dirname)
