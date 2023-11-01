@@ -29,6 +29,9 @@ class Command::TestDiff < Minitest::Test
       index #{index_oid}..#{workspace_oid} 100644
       --- a/1.txt
       +++ b/1.txt
+      @@ -1,1 +1,1 @@
+      -one
+      +changed
     EOF
   end
 
@@ -56,6 +59,9 @@ class Command::TestDiff < Minitest::Test
       index #{index_oid}..#{workspace_oid}
       --- a/1.txt
       +++ b/1.txt
+      @@ -1,1 +1,1 @@
+      -one
+      +changed
     EOF
   end
 
@@ -70,11 +76,23 @@ class Command::TestDiff < Minitest::Test
       index #{index_oid}..0000000
       --- a/1.txt
       +++ /dev/null
+      @@ -1,1 +0,0 @@
+      -one
     EOF
   end
 end
 
-class Command::TestDiffHeadIndex < Command::TestDiff
+class Command::TestDiffHeadIndex < Minitest::Test
+  include CommandHelper
+
+  def setup
+    super
+    write_file("1.txt", "one")
+
+    jit_cmd("add", ".")
+    commit("first commit")
+  end
+
   def assert_diff_cached(output)
     jit_cmd("diff", "--cached")
     assert_stdout(output)
@@ -92,6 +110,9 @@ class Command::TestDiffHeadIndex < Command::TestDiff
       index #{head_oid}..#{index_oid} 100644
       --- a/1.txt
       +++ b/1.txt
+      @@ -1,1 +1,1 @@
+      -one
+      +changed
     EOF
   end
 
@@ -121,6 +142,9 @@ class Command::TestDiffHeadIndex < Command::TestDiff
       index #{head_oid}..#{index_oid}
       --- a/1.txt
       +++ b/1.txt
+      @@ -1,1 +1,1 @@
+      -one
+      +changed
     EOF
   end
 
@@ -137,6 +161,8 @@ class Command::TestDiffHeadIndex < Command::TestDiff
       index #{head_oid}..0000000
       --- a/1.txt
       +++ /dev/null
+      @@ -1,1 +0,0 @@
+      -one
     EOF
   end
 
@@ -152,6 +178,8 @@ class Command::TestDiffHeadIndex < Command::TestDiff
       index 0000000..#{index_oid}
       --- /dev/null
       +++ b/new.txt
+      @@ -0,0 +1,1 @@
+      +new
     EOF
   end
 end

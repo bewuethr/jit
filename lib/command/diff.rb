@@ -105,11 +105,16 @@ module Command
       puts "--- #{a.diff_path}"
       puts "+++ #{b.diff_path}"
 
-      edits = ::Diff.diff(a.data, b.data)
-      edits.each { |edit| puts edit }
+      hunks = ::Diff.diff_hunks(a.data, b.data)
+      hunks.each { |hunk| print_diff_hunk(hunk) }
     end
 
-    def short(oid)
+    private def print_diff_hunk(hunk)
+      puts hunk.header
+      hunk.edits.each { |edit| puts edit }
+    end
+
+    private def short(oid)
       repo.database.short_oid(oid)
     end
   end

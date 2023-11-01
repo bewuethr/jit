@@ -10,11 +10,6 @@ class Command::TestStatus < Minitest::Test
     assert_stdout(output)
   end
 
-  def assert_long_status(output)
-    jit_cmd("status")
-    assert_stdout(output)
-  end
-
   def test_list_untracked_files
     write_file("file.txt", "")
     write_file("another.txt", "")
@@ -76,7 +71,9 @@ class Command::TestStatus < Minitest::Test
   end
 end
 
-class Command::TestStatusIndexWorkspace < Command::TestStatus
+class Command::TestStatusIndexWorkspace < Minitest::Test
+  include CommandHelper
+
   def setup
     super
     write_file("1.txt", "one")
@@ -85,6 +82,11 @@ class Command::TestStatusIndexWorkspace < Command::TestStatus
 
     jit_cmd("add", ".")
     commit("commit message")
+  end
+
+  def assert_status(output)
+    jit_cmd("status", "--porcelain")
+    assert_stdout(output)
   end
 
   def test_print_nothing_when_no_changes
@@ -141,7 +143,9 @@ class Command::TestStatusIndexWorkspace < Command::TestStatus
   end
 end
 
-class Command::TestStatusHeadIndex < Command::TestStatus
+class Command::TestStatusHeadIndex < Minitest::Test
+  include CommandHelper
+
   def setup
     super
     write_file("1.txt", "one")
@@ -150,6 +154,16 @@ class Command::TestStatusHeadIndex < Command::TestStatus
 
     jit_cmd("add", ".")
     commit("first commit")
+  end
+
+  def assert_status(output)
+    jit_cmd("status", "--porcelain")
+    assert_stdout(output)
+  end
+
+  def assert_long_status(output)
+    jit_cmd("status")
+    assert_stdout(output)
   end
 
   def test_report_file_added_to_tracked_directory
