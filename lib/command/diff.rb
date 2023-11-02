@@ -1,6 +1,7 @@
 require_relative "base"
 
 require_relative "../diff"
+require_relative "../pager"
 require_relative "../repository"
 
 module Command
@@ -17,6 +18,8 @@ module Command
     def run
       repo.index.load
       @status = repo.status
+
+      setup_pager
 
       if @args.first == "--cached"
         diff_head_index

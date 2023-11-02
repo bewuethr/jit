@@ -14,6 +14,7 @@ module Command
       @stdin = stdin
       @stdout = stdout
       @stderr = stderr
+      @isatty = @stdout.isatty
     end
 
     def repo
@@ -22,6 +23,11 @@ module Command
 
     def execute
       catch(:exit) { run }
+
+      if defined? @pager
+        @stdout.close_write
+        @pager.wait
+      end
     end
 
     def expanded_pathname(path)
@@ -30,10 +36,20 @@ module Command
 
     def puts(string)
       @stdout.puts(string)
+    rescue Errno::EPIPE
+      exit 0
     end
 
     def fmt(style, string)
-      @stdout.isatty ? Color.format(style, string) : string
+      @isatty ? Color.format(style, string) : string
+    end
+
+    def setup_pager
+      return if defined? @pager
+      return unless @isatty
+
+      @pager = Pager.new(@env, @stdout, @stderr)
+      @stdout = @pager.input
     end
   end
 end
