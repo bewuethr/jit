@@ -112,6 +112,7 @@ class Command::TestStatusIndexWorkspace < Minitest::Test
   end
 
   def test_report_changed_file_with_same_size
+    sleep 0.001
     write_file("a/b/3.txt", "hello")
 
     assert_status <<~EOF
