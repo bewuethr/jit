@@ -111,4 +111,8 @@ module CommandHelper
     stream.rewind
     assert_equal(message, stream.read)
   end
+
+  def assert_same_content(base_path, path_a, path_b)
+    FileUtils.identical?(repo_path.join(base_path, path_a), repo_path.join(base_path, path_b))
+  end
 end
