@@ -30,7 +30,7 @@ module CommandHelper
   end
 
   def short_workspace_oid_for(path)
-    db = Database.new(repo_path.join(".git/objects"))
+    db = Database.new(repo_path.join(".git", "objects"))
     blob = Database::Blob.new(File.read(repo_path.join(path)))
 
     db.hash_object(blob)[..6]
@@ -112,7 +112,7 @@ module CommandHelper
     assert_equal(message, stream.read)
   end
 
-  def assert_same_content(base_path, path_a, path_b)
-    FileUtils.identical?(repo_path.join(base_path, path_a), repo_path.join(base_path, path_b))
+  def resolve_revision(expression)
+    Revision.new(repo, expression).resolve
   end
 end

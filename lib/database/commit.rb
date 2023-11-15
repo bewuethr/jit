@@ -1,7 +1,7 @@
 class Database
   class Commit
     attr_accessor :oid
-    attr_reader :tree
+    attr_reader :parent, :tree, :author
 
     def self.parse(scanner)
       headers = {}
@@ -17,7 +17,7 @@ class Database
       Commit.new(
         headers["parent"],
         headers["tree"],
-        headers["author"],
+        Author.parse(headers["author"]),
         scanner.rest
       )
     end
@@ -44,6 +44,10 @@ class Database
       lines.push(@message)
 
       lines.join("\n")
+    end
+
+    def title_line
+      @message.lines.first
     end
   end
 end

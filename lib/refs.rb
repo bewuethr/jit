@@ -22,7 +22,7 @@ class Refs
     @heads_path = @refs_path.join("heads")
   end
 
-  def create_branch(branch_name)
+  def create_branch(branch_name, start_oid)
     path = @heads_path.join(branch_name)
 
     if INVALID_NAME.match?(branch_name)
@@ -33,7 +33,7 @@ class Refs
       raise InvalidBranch, "A branch named '#{branch_name}' already exists."
     end
 
-    update_ref_file(path, read_head)
+    update_ref_file(path, start_oid)
   end
 
   def update_ref_file(path, oid)
@@ -60,5 +60,22 @@ class Refs
     if File.exist?(head_path)
       File.read(head_path).strip
     end
+  end
+
+  def read_ref(name)
+    path = path_for_name(name)
+    path ? read_ref_file(path) : nil
+  end
+
+  private def path_for_name(name)
+    prefixes = [@pathname, @refs_path, @heads_path]
+    prefix = prefixes.find { |path| File.file?(path.join(name)) }
+    prefix&.join(name)
+  end
+
+  private def read_ref_file(path)
+    File.read(path).strip
+  rescue Errno::ENOENT
+    nil
   end
 end

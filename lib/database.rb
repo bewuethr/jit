@@ -41,6 +41,18 @@ class Database
     @objects[oid] ||= read_object(oid)
   end
 
+  def prefix_match(name)
+    dirname = object_path(name).dirname
+
+    oids = Dir.entries(dirname).map do |filename|
+      "#{dirname.basename}#{filename}"
+    end
+
+    oids.select { |oid| oid.start_with?(name) }
+  rescue Errno::ENOENT
+    []
+  end
+
   private def serialize_object(object)
     string = object.to_s.force_encoding(Encoding::ASCII_8BIT)
     "#{object.type} #{string.bytesize}\0#{string}"
