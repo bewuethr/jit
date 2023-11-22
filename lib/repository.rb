@@ -1,6 +1,7 @@
 require_relative "database"
 require_relative "index"
 require_relative "refs"
+require_relative "repository/migration"
 require_relative "repository/status"
 require_relative "workspace"
 
@@ -27,5 +28,9 @@ class Repository
 
   def status
     Status.new(self)
+  end
+
+  def migration(tree_diff)
+    Migration.new(self, tree_diff)
   end
 end
