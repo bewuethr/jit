@@ -95,6 +95,12 @@ class Index
     @changed = true
   end
 
+  def remove(pathname)
+    remove_entry(pathname)
+    remove_children(pathname.to_s)
+    @changed = true
+  end
+
   def discard_conflicts(entry)
     entry.parent_directories.each { |parent| remove_entry(parent) }
     remove_children(entry.path)

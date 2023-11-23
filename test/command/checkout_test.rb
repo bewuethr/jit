@@ -5,6 +5,12 @@ require_relative "../command_helper"
 class Command::TestCheckout < Minitest::Test
   include CommandHelper
 
+  BASE_FILES = {
+    "1.txt" => "1",
+    "outer/2.txt" => "2",
+    "outer/inner/3.txt" => "3"
+  }
+
   def commit_all
     delete(".git/index")
     jit_cmd("add", ".")
@@ -16,11 +22,10 @@ class Command::TestCheckout < Minitest::Test
     jit_cmd("checkout", revision)
   end
 
-  BASE_FILES = {
-    "1.txt" => "1",
-    "outer/2.txt" => "2",
-    "outer/inner/3.txt" => "3"
-  }
+  def assert_status(status)
+    jit_cmd("status", "--porcelain")
+    assert_stdout(status)
+  end
 
   def setup
     super
@@ -37,6 +42,7 @@ class Command::TestCheckout < Minitest::Test
     commit_and_checkout("@^")
 
     assert_workspace(BASE_FILES)
+    assert_status("")
   end
 
   def test_remove_file
@@ -51,6 +57,7 @@ class Command::TestCheckout < Minitest::Test
     commit_and_checkout("@^")
 
     assert_workspace(BASE_FILES)
+    assert_status("")
   end
 
   def test_remove_file_from_new_directory
@@ -59,6 +66,8 @@ class Command::TestCheckout < Minitest::Test
 
     assert_workspace(BASE_FILES)
     assert_noent("new")
+    assert_status("")
+    assert_status("")
   end
 
   def test_remove_file_from_new_nested_directory
@@ -67,6 +76,7 @@ class Command::TestCheckout < Minitest::Test
 
     assert_workspace(BASE_FILES)
     assert_noent("new")
+    assert_status("")
   end
 
   def test_remove_file_from_non_empty_directory
@@ -74,6 +84,7 @@ class Command::TestCheckout < Minitest::Test
     commit_and_checkout("@^")
 
     assert_workspace(BASE_FILES)
+    assert_status("")
   end
 
   def test_add_file
@@ -81,6 +92,7 @@ class Command::TestCheckout < Minitest::Test
     commit_and_checkout("@^")
 
     assert_workspace(BASE_FILES)
+    assert_status("")
   end
 
   def test_add_file_to_directory
@@ -88,6 +100,7 @@ class Command::TestCheckout < Minitest::Test
     commit_and_checkout("@^")
 
     assert_workspace(BASE_FILES)
+    assert_status("")
   end
 
   def test_add_directory
@@ -95,6 +108,7 @@ class Command::TestCheckout < Minitest::Test
     commit_and_checkout("@^")
 
     assert_workspace(BASE_FILES)
+    assert_status("")
   end
 
   def test_replace_file_with_directory
@@ -103,6 +117,7 @@ class Command::TestCheckout < Minitest::Test
     commit_and_checkout("@^")
 
     assert_workspace(BASE_FILES)
+    assert_status("")
   end
 
   def test_replace_directory_with_file
@@ -111,5 +126,6 @@ class Command::TestCheckout < Minitest::Test
     commit_and_checkout("@^")
 
     assert_workspace(BASE_FILES)
+    assert_status("")
   end
 end
