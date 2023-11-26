@@ -128,4 +128,43 @@ class Command::TestCheckout < Minitest::Test
     assert_workspace(BASE_FILES)
     assert_status("")
   end
+
+  def test_maintains_workspace_modifications
+    write_file("1.txt", "changed")
+    commit_all
+
+    write_file("outer/2.txt", "hello")
+    delete("outer/inner")
+    jit_cmd("checkout", "@^")
+
+    assert_workspace({
+      "1.txt" => "1",
+      "outer/2.txt" => "hello"
+    })
+
+    assert_status <<~EOF
+      \ M outer/2.txt
+      \ D outer/inner/3.txt
+    EOF
+  end
+
+  def test_maintains_index_modifications
+    write_file("1.txt", "changed")
+    commit_all
+
+    write_file("outer/2.txt", "hello")
+    write_file("outer/inner/4.txt", "world")
+    jit_cmd("add", ".")
+    jit_cmd("checkout", "@^")
+
+    assert_workspace(BASE_FILES.merge({
+      "outer/2.txt" => "hello",
+      "outer/inner/4.txt" => "world"
+    }))
+
+    assert_status <<~EOF
+      M  outer/2.txt
+      A  outer/inner/4.txt
+    EOF
+  end
 end
