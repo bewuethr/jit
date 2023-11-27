@@ -1,6 +1,7 @@
 require "sorted_set"
 
 require_relative "../sorted_hash"
+require_relative "inspector"
 
 class Repository
   class Status
@@ -9,6 +10,8 @@ class Repository
     def initialize(repository)
       @repo = repository
       @stats = {}
+
+      @inspector = Inspector.new(@repo)
 
       @changed = SortedSet.new
       @index_changes = SortedHash.new
@@ -31,25 +34,10 @@ class Repository
         if @repo.index.tracked?(path)
           @stats[path] = stat if stat.file?
           scan_workspace(path) if stat.directory?
-        elsif trackable_file?(path, stat)
+        elsif @inspector.trackable_file?(path, stat)
           path += File::SEPARATOR if stat.directory?
           @untracked.add(path)
         end
-      end
-    end
-
-    private def trackable_file?(path, stat)
-      return false unless stat
-
-      return !@repo.index.tracked?(path) if stat.file?
-      return false unless stat.directory?
-
-      items = @repo.workspace.list_dir(path)
-      files = items.select { |_, item_stat| item_stat.file? }
-      dirs = items.select { |_, item_stat| item_stat.directory? }
-
-      [files, dirs].any? do |list|
-        list.any? { |item_path, item_stat| trackable_file?(item_path, item_stat) }
       end
     end
 
@@ -85,37 +73,21 @@ class Repository
 
     private def check_index_against_workspace(entry)
       stat = @stats[entry.path]
+      status = @inspector.compare_index_to_workspace(entry, stat)
 
-      unless stat
-        return record_change(entry.path, @workspace_changes, :deleted)
-      end
-
-      unless entry.stat_match?(stat)
-        return record_change(entry.path, @workspace_changes, :modified)
-      end
-
-      return if entry.times_match?(stat)
-
-      data = @repo.workspace.read_file(entry.path)
-      blob = Database::Blob.new(data)
-      oid = @repo.database.hash_object(blob)
-
-      if entry.oid == oid
-        @repo.index.update_entry_stat(entry, stat)
+      if status
+        record_change(entry.path, @workspace_changes, status)
       else
-        record_change(entry.path, @workspace_changes, :modified)
+        @repo.index.update_entry_stat(entry, stat)
       end
     end
 
     private def check_index_against_head_tree(entry)
       item = @head_tree[entry.path]
+      status = @inspector.compare_tree_to_index(item, entry)
 
-      if item
-        unless entry.mode == item.mode && entry.oid == item.oid
-          record_change(entry.path, @index_changes, :modified)
-        end
-      else
-        record_change(entry.path, @index_changes, :added)
+      if status
+        record_change(entry.path, @index_changes, status)
       end
     end
 
