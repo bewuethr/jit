@@ -21,6 +21,8 @@ module Command
       exit 0
     rescue Revision::InvalidObject => error
       handle_invalid_object(revision, error)
+    rescue Repository::Migration::Conflict
+      handle_migration_conflict(migration)
     end
 
     private def handle_invalid_object(revision, error)
@@ -30,6 +32,16 @@ module Command
       end
       @stderr.puts "error: #{error.message}"
 
+      exit 1
+    end
+
+    private def handle_migration_conflict(migration)
+      repo.index.release_lock
+
+      migration.errors.each do |message|
+        @stderr.puts "error: #{message}"
+      end
+      @stderr.puts "Aborting"
       exit 1
     end
   end
