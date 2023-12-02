@@ -30,17 +30,11 @@ class Database
     write_object(object.oid, content)
   end
 
-  def hash_object(object)
-    hash_content(serialize_object(object))
-  end
+  def hash_object(object) = hash_content(serialize_object(object))
 
-  def short_oid(oid)
-    oid[0..6]
-  end
+  def short_oid(oid) = oid[0..6]
 
-  def load(oid)
-    @objects[oid] ||= read_object(oid)
-  end
+  def load(oid) = @objects[oid] ||= read_object(oid)
 
   def prefix_match(name)
     dirname = object_path(name).dirname
@@ -65,9 +59,7 @@ class Database
     "#{object.type} #{string.bytesize}\0#{string}"
   end
 
-  private def hash_content(string)
-    Digest::SHA1.hexdigest(string)
-  end
+  private def hash_content(string) = Digest::SHA1.hexdigest(string)
 
   private def write_object(oid, content)
     path = object_path(oid)
@@ -91,9 +83,7 @@ class Database
     File.rename(temp_path, path)
   end
 
-  private def object_path(oid)
-    @pathname.join(oid[0..1], oid[2..])
-  end
+  private def object_path(oid) = @pathname.join(oid[0..1], oid[2..])
 
   private def generate_temp_name
     "tmp_obj_#{(1..6).map { TEMP_CHARS.sample }.join("")}"

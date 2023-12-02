@@ -35,8 +35,6 @@ class Index
       @digest.update(data)
     end
 
-    def write_checksum
-      @file.write(@digest.digest)
-    end
+    def write_checksum = @file.write(@digest.digest)
   end
 end

@@ -1,8 +1,6 @@
 module Diff
   class Myers
-    def self.diff(a, b)
-      Myers.new(a, b).diff
-    end
+    def self.diff(a, b) = Myers.new(a, b).diff
 
     def initialize(a, b)
       @a, @b = a, b

@@ -72,9 +72,7 @@ module Command
       Target.new(path, oid, mode.to_s(8), blob.data)
     end
 
-    private def from_nothing(path)
-      Target.new(path, NULL_OID, nil, "")
-    end
+    private def from_nothing(path) = Target.new(path, NULL_OID, nil, "")
 
     private def print_diff(a, b)
       return if a.oid == b.oid && a.mode == b.mode
@@ -87,9 +85,7 @@ module Command
       print_diff_content(a, b)
     end
 
-    private def header(string)
-      puts fmt(:bold, string)
-    end
+    private def header(string) = (puts fmt(:bold, string))
 
     private def print_diff_mode(a, b)
       if a.mode.nil?
@@ -131,8 +127,6 @@ module Command
       end
     end
 
-    private def short(oid)
-      repo.database.short_oid(oid)
-    end
+    private def short(oid) = repo.database.short_oid(oid)
   end
 end

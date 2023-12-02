@@ -5,17 +5,11 @@ require "command"
 require "repository"
 
 module CommandHelper
-  def setup
-    jit_cmd("init", repo_path.to_s)
-  end
+  def setup = jit_cmd("init", repo_path.to_s)
 
-  def teardown
-    FileUtils.rm_rf(repo_path)
-  end
+  def teardown = FileUtils.rm_rf(repo_path)
 
-  def repo_path
-    Pathname.new(File.expand_path("../test-repo", __FILE__))
-  end
+  def repo_path = Pathname.new(File.expand_path("../test-repo", __FILE__))
 
   def repo
     @repository ||= Repository.new(repo_path.join(".git"))
@@ -50,25 +44,15 @@ module CommandHelper
     File.open(path, flags) { |file| file.write(contents) }
   end
 
-  def make_executable(name)
-    File.chmod(0o755, repo_path.join(name))
-  end
+  def make_executable(name) = File.chmod(0o755, repo_path.join(name))
 
-  def make_unreadable(name)
-    File.chmod(0o200, repo_path.join(name))
-  end
+  def make_unreadable(name) = File.chmod(0o200, repo_path.join(name))
 
-  def mkdir(name)
-    FileUtils.mkdir_p(repo_path.join(name))
-  end
+  def mkdir(name) = FileUtils.mkdir_p(repo_path.join(name))
 
-  def touch(name)
-    FileUtils.touch(repo_path.join(name))
-  end
+  def touch(name) = FileUtils.touch(repo_path.join(name))
 
-  def delete(name)
-    FileUtils.rm_rf(repo_path.join(name))
-  end
+  def delete(name) = FileUtils.rm_rf(repo_path.join(name))
 
   def set_env(key, value)
     @env ||= {}
@@ -95,26 +79,18 @@ module CommandHelper
     jit_cmd("commit")
   end
 
-  def assert_status(status)
-    assert_equal(status, @cmd.status)
-  end
+  def assert_status(status) = assert_equal(status, @cmd.status)
 
-  def assert_stdout(message)
-    assert_output(@stdout, message)
-  end
+  def assert_stdout(message) = assert_output(@stdout, message)
 
-  def assert_stderr(message)
-    assert_output(@stderr, message)
-  end
+  def assert_stderr(message) = assert_output(@stderr, message)
 
   def assert_output(stream, message)
     stream.rewind
     assert_equal(message, stream.read)
   end
 
-  def resolve_revision(expression)
-    Revision.new(repo, expression).resolve
-  end
+  def resolve_revision(expression) = Revision.new(repo, expression).resolve
 
   def assert_workspace(contents)
     files = {}
@@ -126,7 +102,5 @@ module CommandHelper
     assert_equal(contents, files)
   end
 
-  def assert_noent(filename)
-    refute File.exist?(repo_path.join(filename))
-  end
+  def assert_noent(filename) = refute File.exist?(repo_path.join(filename))
 end

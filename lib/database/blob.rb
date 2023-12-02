@@ -3,20 +3,14 @@ class Database
     attr_accessor :oid
     attr_reader :data
 
-    def self.parse(scanner)
-      Blob.new(scanner.rest)
-    end
+    def self.parse(scanner) = Blob.new(scanner.rest)
 
     def initialize(data)
       @data = data
     end
 
-    def type
-      "blob"
-    end
+    def type = "blob"
 
-    def to_s
-      @data
-    end
+    def to_s = @data
   end
 end

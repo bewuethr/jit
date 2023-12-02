@@ -57,9 +57,7 @@ class Repository
       collect_errors
     end
 
-    def update_workspace
-      @repo.workspace.apply_migration(self)
-    end
+    def update_workspace = @repo.workspace.apply_migration(self)
 
     def check_for_conflict(path, old_item, new_item)
       entry = @repo.index.entry_for_path(path)
@@ -152,8 +150,6 @@ class Repository
       raise Conflict unless @errors.empty?
     end
 
-    def blob_data(oid)
-      @repo.database.load(oid).data
-    end
+    def blob_data(oid) = @repo.database.load(oid).data
   end
 end

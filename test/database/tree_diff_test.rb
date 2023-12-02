@@ -5,27 +5,17 @@ require "pathname"
 require "database"
 
 FakeEntry = Struct.new(:path, :oid, :mode) do
-  def parent_directories
-    Pathname.new(path).descend.to_a[0..-2]
-  end
+  def parent_directories = Pathname.new(path).descend.to_a[0..-2]
 
-  def basename
-    Pathname.new(path).basename
-  end
+  def basename = Pathname.new(path).basename
 end
 
 class Database::TestTreeDiff < Minitest::Test
-  def setup
-    FileUtils.mkdir_p(db_path)
-  end
+  def setup = FileUtils.mkdir_p(db_path)
 
-  def teardown
-    FileUtils.rm_rf(db_path)
-  end
+  def teardown = FileUtils.rm_rf(db_path)
 
-  def db_path
-    Pathname.new(File.expand_path("../../test-objects", __FILE__))
-  end
+  def db_path = Pathname.new(File.expand_path("../../test-objects", __FILE__))
 
   def store_tree(contents)
     database = Database.new(db_path)
@@ -43,9 +33,7 @@ class Database::TestTreeDiff < Minitest::Test
     tree.oid
   end
 
-  def tree_diff(a, b)
-    Database.new(db_path).tree_diff(a, b)
-  end
+  def tree_diff(a, b) = Database.new(db_path).tree_diff(a, b)
 
   def test_report_changed_file
     tree_a = store_tree({

@@ -11,15 +11,9 @@ class Entry
     @stat = stat
   end
 
-  def mode
-    @stat.executable? ? EXECUTABLE_MODE : REGULAR_MODE
-  end
+  def mode = @stat.executable? ? EXECUTABLE_MODE : REGULAR_MODE
 
-  def parent_directories
-    @name.descend.to_a[0..-2]
-  end
+  def parent_directories = @name.descend.to_a[0..-2]
 
-  def basename
-    @name.basename
-  end
+  def basename = @name.basename
 end

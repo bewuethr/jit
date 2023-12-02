@@ -51,13 +51,9 @@ class Database
       block.call(self)
     end
 
-    def type
-      "tree"
-    end
+    def type = "tree"
 
-    def mode
-      TREE_MODE
-    end
+    def mode = TREE_MODE
 
     def to_s
       entries = @entries.map do |name, entry|

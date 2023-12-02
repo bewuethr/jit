@@ -11,7 +11,5 @@ class SortedHash < Hash
     super
   end
 
-  def each
-    @keys.each { |key| yield [key, self[key]] }
-  end
+  def each = @keys.each { |key| yield [key, self[key]] }
 end

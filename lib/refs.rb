@@ -48,13 +48,9 @@ class Refs
     retry
   end
 
-  def update_head(oid)
-    update_ref_file(@pathname.join(HEAD), oid)
-  end
+  def update_head(oid) = update_ref_file(@pathname.join(HEAD), oid)
 
-  private def head_path
-    @pathname.join("HEAD")
-  end
+  private def head_path = @pathname.join("HEAD")
 
   def read_head
     if File.exist?(head_path)

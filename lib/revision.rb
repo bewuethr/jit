@@ -2,15 +2,11 @@ class Revision
   InvalidObject = Class.new(StandardError)
 
   Ref = Struct.new(:name) do
-    def resolve(context)
-      context.read_ref(name)
-    end
+    def resolve(context) = context.read_ref(name)
   end
 
   Parent = Struct.new(:rev) do
-    def resolve(context)
-      context.commit_parent(rev.resolve(context))
-    end
+    def resolve(context) = context.commit_parent(rev.resolve(context))
   end
 
   Ancestor = Struct.new(:rev, :n) do
@@ -65,9 +61,7 @@ class Revision
     end
   end
 
-  def self.valid_ref?(revision)
-    !INVALID_NAME.match?(revision)
-  end
+  def self.valid_ref?(revision) = !INVALID_NAME.match?(revision)
 
   def resolve(type = nil)
     oid = @query&.resolve(self)

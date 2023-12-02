@@ -29,9 +29,7 @@ class Database
       @message = message
     end
 
-    def type
-      "commit"
-    end
+    def type = "commit"
 
     def to_s
       lines = []
@@ -46,8 +44,6 @@ class Database
       lines.join("\n")
     end
 
-    def title_line
-      @message.lines.first
-    end
+    def title_line = @message.lines.first
   end
 end

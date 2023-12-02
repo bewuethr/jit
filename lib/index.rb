@@ -155,15 +155,9 @@ class Index
     @changed = true
   end
 
-  def release_lock
-    @lockfile.rollback
-  end
+  def release_lock = @lockfile.rollback
 
-  def tracked_file?(path)
-    @entries.has_key?(path.to_s)
-  end
+  def tracked_file?(path) = @entries.has_key?(path.to_s)
 
-  def tracked?(path)
-    tracked_file?(path) or @parents.has_key?(path.to_s)
-  end
+  def tracked?(path) = tracked_file?(path) || @parents.has_key?(path.to_s)
 end

@@ -3,21 +3,13 @@ require "minitest/autorun"
 require "revision"
 
 class TestRevision < Minitest::Test
-  def assert_parse(expression, tree)
-    assert_equal(tree, Revision.parse(expression))
-  end
+  def assert_parse(expression, tree) = assert_equal(tree, Revision.parse(expression))
 
-  def test_parse_head
-    assert_parse("HEAD", Revision::Ref.new("HEAD"))
-  end
+  def test_parse_head = assert_parse("HEAD", Revision::Ref.new("HEAD"))
 
-  def test_parse_at
-    assert_parse("@", Revision::Ref.new("HEAD"))
-  end
+  def test_parse_at = assert_parse("@", Revision::Ref.new("HEAD"))
 
-  def test_parse_branch_name
-    assert_parse("main", Revision::Ref.new("main"))
-  end
+  def test_parse_branch_name = assert_parse("main", Revision::Ref.new("main"))
 
   def test_parse_object_id
     assert_parse(

@@ -22,11 +22,7 @@ module Diff
     document.map.with_index { |text, i| Line.new(i + 1, text) }
   end
 
-  def self.diff(a, b)
-    Myers.diff(Diff.lines(a), Diff.lines(b))
-  end
+  def self.diff(a, b) = Myers.diff(Diff.lines(a), Diff.lines(b))
 
-  def self.diff_hunks(a, b)
-    Hunk.filter(Diff.diff(a, b))
-  end
+  def self.diff_hunks(a, b) = Hunk.filter(Diff.diff(a, b))
 end

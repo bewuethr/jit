@@ -30,9 +30,7 @@ module Command
       end
     end
 
-    def expanded_pathname(path)
-      Pathname.new(File.expand_path(path, @dir))
-    end
+    def expanded_pathname(path) = Pathname.new(File.expand_path(path, @dir))
 
     def puts(string)
       @stdout.puts(string)
@@ -40,9 +38,7 @@ module Command
       exit 0
     end
 
-    def fmt(style, string)
-      @isatty ? Color.format(style, string) : string
-    end
+    def fmt(style, string) = @isatty ? Color.format(style, string) : string
 
     def setup_pager
       return if defined? @pager

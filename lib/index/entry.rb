@@ -28,21 +28,13 @@ class Index
       )
     end
 
-    def self.mode_for_stat(stat)
-      stat.executable? ? EXECUTABLE_MODE : REGULAR_MODE
-    end
+    def self.mode_for_stat(stat) = stat.executable? ? EXECUTABLE_MODE : REGULAR_MODE
 
-    def self.parse(data)
-      Entry.new(*data.unpack(ENTRY_FORMAT))
-    end
+    def self.parse(data) = Entry.new(*data.unpack(ENTRY_FORMAT))
 
-    def parent_directories
-      Pathname.new(path).descend.to_a[0..-2]
-    end
+    def parent_directories = Pathname.new(path).descend.to_a[0..-2]
 
-    def basename
-      Pathname.new(path).basename
-    end
+    def basename = Pathname.new(path).basename
 
     def to_s
       string = to_a.pack(ENTRY_FORMAT)
@@ -50,9 +42,7 @@ class Index
       string
     end
 
-    def key
-      path
-    end
+    def key = path
 
     def stat_match?(stat)
       mode == Entry.mode_for_stat(stat) and (size == 0 or size == stat.size)

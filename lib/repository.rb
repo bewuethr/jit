@@ -26,11 +26,7 @@ class Repository
     @workspace ||= Workspace.new(@git_path.dirname)
   end
 
-  def status
-    Status.new(self)
-  end
+  def status = Status.new(self)
 
-  def migration(tree_diff)
-    Migration.new(self, tree_diff)
-  end
+  def migration(tree_diff) = Migration.new(self, tree_diff)
 end

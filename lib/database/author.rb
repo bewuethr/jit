@@ -11,9 +11,7 @@ class Database
       Author.new(name, email, time)
     end
 
-    def short_date
-      time.strftime("%F")
-    end
+    def short_date = time.strftime("%F")
 
     def to_s
       timestamp = time.strftime(TIME_FORMAT)
