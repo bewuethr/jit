@@ -31,14 +31,14 @@ module Command
       exit 0
     end
 
-    def print_results
+    private def print_results
       case @options[:format]
       when "long" then print_long_format
       when "porcelain" then print_porcelain_format
       end
     end
 
-    def print_porcelain_format
+    private def print_porcelain_format
       @status.changed.each do |path|
         status = status_for(path)
         puts "#{status} #{path}"
@@ -49,14 +49,16 @@ module Command
       end
     end
 
-    def status_for(path)
+    private def status_for(path)
       left = SHORT_STATUS.fetch(@status.index_changes[path], " ")
       right = SHORT_STATUS.fetch(@status.workspace_changes[path], " ")
 
       left + right
     end
 
-    def print_long_format
+    private def print_long_format
+      print_branch_status
+
       print_changes("Changes to be committed", @status.index_changes, :green)
       print_changes("Changes not staged for commit", @status.workspace_changes, :red)
       print_changes("Untracked files", @status.untracked, :red)
@@ -64,7 +66,17 @@ module Command
       print_commit_status
     end
 
-    def print_changes(message, changeset, style)
+    private def print_branch_status
+      current = repo.refs.current_ref
+
+      if current.head?
+        puts fmt(:red, "Not currently on any branch.")
+      else
+        puts "On branch #{current.short_name}"
+      end
+    end
+
+    private def print_changes(message, changeset, style)
       return if changeset.empty?
 
       puts "#{message}:"
@@ -76,7 +88,7 @@ module Command
       puts ""
     end
 
-    def print_commit_status
+    private def print_commit_status
       return if @status.index_changes.any?
 
       if @status.workspace_changes.any?

@@ -232,6 +232,7 @@ class Command::TestStatusHeadIndex < Minitest::Test
     jit_cmd("add", ".")
 
     assert_long_status <<~EOF
+      On branch main
       Changes to be committed:
 
       \tmodified:   1.txt
