@@ -1,20 +1,14 @@
 require_relative "lockfile"
 
 class Refs
-  LockDenied = Class.new(StandardError)
   InvalidBranch = Class.new(StandardError)
 
+  SymRef = Struct.new(:path)
+  Ref = Struct.new(:oid)
+
   HEAD = "HEAD"
-  INVALID_NAME = /
-      ^\.
-    | \/\.
-    | \.\.
-    | ^\/
-    | \/$
-    | \.lock$
-    | @\{
-    | [\x00-\x20*:?\[\\^~\x7f]
-    /x
+
+  SYMREF = /^ref: (.+$)/
 
   def initialize(pathname)
     @pathname = pathname
@@ -25,7 +19,7 @@ class Refs
   def create_branch(branch_name, start_oid)
     path = @heads_path.join(branch_name)
 
-    if INVALID_NAME.match?(branch_name)
+    unless Revision.valid_ref?(branch_name)
       raise InvalidBranch, "'#{branch_name}' is not a valid branch name."
     end
 
@@ -36,7 +30,39 @@ class Refs
     update_ref_file(path, start_oid)
   end
 
-  def update_ref_file(path, oid)
+  def update_head(oid) = update_ref_file(@pathname.join(HEAD), oid)
+
+  def set_head(revision, oid)
+    head = @pathname.join(HEAD)
+    path = @heads_path.join(revision)
+
+    if File.file?(path)
+      relative = path.relative_path_from(@pathname)
+      update_ref_file(head, "ref: #{relative}")
+    else
+      update_ref_file(head, oid)
+    end
+  end
+
+  def read_head
+    read_symref(@pathname.join(HEAD))
+  end
+
+  def read_ref(name)
+    path = path_for_name(name)
+    path ? read_symref(path) : nil
+  end
+
+  def current_ref(source = HEAD)
+    ref = read_oid_or_symref(@pathname.join(source))
+
+    case ref
+    when SymRef then current_ref(ref.path)
+    when Ref, nil then SymRef.new(source)
+    end
+  end
+
+  private def update_ref_file(path, oid)
     lockfile = Lockfile.new(path)
 
     lockfile.hold_for_update
@@ -48,19 +74,22 @@ class Refs
     retry
   end
 
-  def update_head(oid) = update_ref_file(@pathname.join(HEAD), oid)
+  private def read_symref(path)
+    ref = read_oid_or_symref(path)
 
-  private def head_path = @pathname.join("HEAD")
-
-  def read_head
-    if File.exist?(head_path)
-      File.read(head_path).strip
+    case ref
+    when SymRef then read_symref(@pathname.join(ref.path))
+    when Ref then ref.oid
     end
   end
 
-  def read_ref(name)
-    path = path_for_name(name)
-    path ? read_ref_file(path) : nil
+  private def read_oid_or_symref(path)
+    data = File.read(path).strip
+    match = SYMREF.match(data)
+
+    match ? SymRef.new(match[1]) : Ref.new(data)
+  rescue Errno::ENOENT
+    nil
   end
 
   private def path_for_name(name)

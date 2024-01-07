@@ -657,3 +657,42 @@ class Command::TestCheckout < Minitest::Test
     EOF
   end
 end
+
+class Command::TestCheckoutChain < Minitest::Test
+  include CommandHelper
+
+  def setup
+    super
+
+    messages = ["first", "second", "third"]
+
+    messages.each do |message|
+      write_file("file.txt", message)
+      jit_cmd("add", ".")
+      commit(message)
+    end
+
+    jit_cmd("branch", "topic")
+    jit_cmd("branch", "second", "@^")
+  end
+
+  def test_head_links_to_checked_out_branch
+    jit_cmd("checkout", "topic")
+    assert_equal("refs/heads/topic", repo.refs.current_ref.path)
+  end
+
+  def test_head_resolves_to_same_object_as_branch
+    jit_cmd("checkout", "topic")
+    assert_equal(repo.refs.read_ref("topic"), repo.refs.read_head)
+  end
+
+  def test_relative_rev_checkout_detaches_head
+    jit_cmd("checkout", "topic^")
+    assert_equal("HEAD", repo.refs.current_ref.path)
+  end
+
+  def test_relative_rev_checkout_puts_rev_value_in_head
+    jit_cmd("checkout", "topic^")
+    assert_equal(resolve_revision("topic^"), repo.refs.read_head)
+  end
+end

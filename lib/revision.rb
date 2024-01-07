@@ -28,7 +28,7 @@ class Revision
     | \.lock$
     | @\{
     | [\x00-\x20*:?\[\\^~\x7f]
-    /x
+  /x
 
   PARENT = /^(.+)\^$/
   ANCESTOR = /^(.+)~(\d+)$/
