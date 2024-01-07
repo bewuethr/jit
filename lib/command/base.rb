@@ -1,3 +1,5 @@
+require "optparse"
+
 module Command
   class Base
     attr_reader :status
@@ -22,6 +24,7 @@ module Command
     end
 
     def execute
+      parse_options
       catch(:exit) { run }
 
       if defined? @pager
@@ -46,6 +49,17 @@ module Command
 
       @pager = Pager.new(@env, @stdout, @stderr)
       @stdout = @pager.input
+    end
+
+    def parse_options
+      @options = {}
+      @parser = OptionParser.new
+
+      define_options
+      @parser.parse!(@args)
+    end
+
+    def define_options
     end
   end
 end
