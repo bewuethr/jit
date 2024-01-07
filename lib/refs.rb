@@ -43,7 +43,7 @@ class Refs
     update_ref_file(path, start_oid)
   end
 
-  def update_head(oid) = update_ref_file(@pathname.join(HEAD), oid)
+  def update_head(oid) = update_symref(@pathname.join(HEAD), oid)
 
   def set_head(revision, oid)
     head = @pathname.join(HEAD)
@@ -79,9 +79,7 @@ class Refs
     lockfile = Lockfile.new(path)
 
     lockfile.hold_for_update
-    lockfile.write(oid)
-    lockfile.write("\n")
-    lockfile.commit
+    write_lockfile(lockfile, oid)
   rescue Lockfile::MissingParent
     FileUtils.mkdir_p(path.dirname)
     retry
@@ -94,6 +92,26 @@ class Refs
     when SymRef then read_symref(@pathname.join(ref.path))
     when Ref then ref.oid
     end
+  end
+
+  private def update_symref(path, oid)
+    lockfile = Lockfile.new(path)
+    lockfile.hold_for_update
+
+    ref = read_oid_or_symref(path)
+    return write_lockfile(lockfile, oid) unless ref.is_a?(SymRef)
+
+    begin
+      update_symref(@pathname.join(ref.path), oid)
+    ensure
+      lockfile.rollback
+    end
+  end
+
+  private def write_lockfile(lockfile, oid)
+    lockfile.write(oid)
+    lockfile.write("\n")
+    lockfile.commit
   end
 
   private def read_oid_or_symref(path)
