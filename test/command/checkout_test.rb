@@ -686,6 +686,47 @@ class Command::TestCheckoutChain < Minitest::Test
     assert_equal(repo.refs.read_ref("topic"), repo.refs.read_head)
   end
 
+  def test_print_message_when_switching_to_same_branch
+    jit_cmd("checkout", "topic")
+
+    jit_cmd("checkout", "topic")
+    assert_stderr <<~EOF
+      Already on 'topic'
+    EOF
+  end
+
+  def test_print_message_when_switching_to_another_branch
+    jit_cmd("checkout", "topic")
+
+    jit_cmd("checkout", "second")
+    assert_stderr <<~EOF
+      Switched to branch 'second'
+    EOF
+  end
+
+  def test_print_warning_when_detaching_head
+    jit_cmd("checkout", "topic")
+
+    short_oid = repo.database.short_oid(resolve_revision("@"))
+
+    jit_cmd("checkout", "@")
+
+    assert_stderr <<~EOF
+      Note: checking out '@'.
+
+      You are in 'detached HEAD' state. You can look around, make experimental
+      changes and commit them, and you can discard any commits you make in this
+      state without impacting any branches by switching back to a branch.
+
+      If you want to create a new branch to retain commits you create, you may
+      do so (now or later) by using the branch command. Example:
+
+        jit branch <new-branch-name>
+
+      HEAD is now at #{short_oid} third
+    EOF
+  end
+
   def test_relative_rev_checkout_detaches_head
     jit_cmd("checkout", "topic^")
     assert_equal("HEAD", repo.refs.current_ref.path)
@@ -694,5 +735,52 @@ class Command::TestCheckoutChain < Minitest::Test
   def test_relative_rev_checkout_puts_rev_value_in_head
     jit_cmd("checkout", "topic^")
     assert_equal(resolve_revision("topic^"), repo.refs.read_head)
+  end
+
+  def test_relative_rev_prints_message_when_switching_to_same_commit
+    jit_cmd("checkout", "topic^")
+
+    short_oid = repo.database.short_oid(resolve_revision("@"))
+
+    jit_cmd("checkout", "@")
+
+    assert_stderr <<~EOF
+      HEAD is now at #{short_oid} second
+    EOF
+  end
+
+  def test_relative_rev_prints_message_when_switching_to_different_commit
+    jit_cmd("checkout", "topic^")
+
+    a = repo.database.short_oid(resolve_revision("@"))
+    b = repo.database.short_oid(resolve_revision("@^"))
+
+    jit_cmd("checkout", "@^")
+
+    assert_stderr <<~EOF
+      Previous HEAD position was #{a} second
+      HEAD is now at #{b} first
+    EOF
+  end
+
+  def test_relative_rev_print_message_when_switching_to_branch_with_same_id
+    jit_cmd("checkout", "topic^")
+
+    jit_cmd("checkout", "second")
+    assert_stderr <<~EOF
+      Switched to branch 'second'
+    EOF
+  end
+
+  def test_relative_rev_print_message_when_switching_to_different_branch
+    jit_cmd("checkout", "topic^")
+
+    short_oid = repo.database.short_oid(resolve_revision("@"))
+
+    jit_cmd("checkout", "topic")
+    assert_stderr <<~EOF
+      Previous HEAD position was #{short_oid} second
+      Switched to branch 'topic'
+    EOF
   end
 end
