@@ -8,13 +8,11 @@ class Refs
   InvalidBranch = Class.new(StandardError)
 
   SymRef = Struct.new(:refs, :path) do
-    def read_oid
-      refs.read_ref(path)
-    end
+    def read_oid = refs.read_ref(path)
 
-    def head?
-      path == HEAD
-    end
+    def head? = path == HEAD
+
+    def short_name = refs.short_name(path)
   end
 
   Ref = Struct.new(:oid) do
@@ -73,6 +71,33 @@ class Refs
     when SymRef then current_ref(ref.path)
     when Ref, nil then SymRef.new(self, source)
     end
+  end
+
+  def list_branches = list_refs(@heads_path)
+
+  def short_name(path)
+    path = @pathname.join(path)
+
+    prefix = [@heads_path, @pathname].find do |dir|
+      path.dirname.ascend.any? { |parent| parent == dir }
+    end
+
+    path.relative_path_from(prefix).to_s
+  end
+
+  private def list_refs(dirname)
+    names = Dir.entries(dirname) - [".", ".."]
+
+    names.map { |name| dirname.join(name) }.flat_map do |path|
+      if File.directory?(path)
+        list_refs(path)
+      else
+        path = path.relative_path_from(@pathname)
+        SymRef.new(self, path.to_s)
+      end
+    end
+  rescue Errno::ENOENT
+    []
   end
 
   private def update_ref_file(path, oid)

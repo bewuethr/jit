@@ -103,4 +103,6 @@ module CommandHelper
   end
 
   def assert_noent(filename) = refute File.exist?(repo_path.join(filename))
+
+  def load_commit(expression) = repo.database.load(resolve_revision(expression))
 end

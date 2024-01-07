@@ -124,4 +124,27 @@ class Command::TestBranch < Minitest::Test
       fatal: Not a valid object name: '#{tree_id}^'.
     EOF
   end
+
+  def test_list_existing_branches
+    jit_cmd("branch", "new-feature")
+    jit_cmd("branch")
+
+    assert_stdout <<~EOF
+      * main
+        new-feature
+    EOF
+  end
+
+  def test_list_existing_branches_verbose
+    a = load_commit("@^")
+    b = load_commit("@")
+
+    jit_cmd("branch", "new-feature", "@^")
+    jit_cmd("branch", "--verbose")
+
+    assert_stdout <<~EOF
+      * main        #{repo.database.short_oid(b.oid)} third
+        new-feature #{repo.database.short_oid(a.oid)} second
+    EOF
+  end
 end
