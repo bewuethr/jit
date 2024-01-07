@@ -85,6 +85,34 @@ class Refs
     path.relative_path_from(prefix).to_s
   end
 
+  def delete_branch(branch_name)
+    path = @heads_path.join(branch_name)
+
+    lockfile = Lockfile.new(path)
+    lockfile.hold_for_update
+
+    oid = read_symref(path)
+    raise InvalidBranch, "branch '#{branch_name}' not found." unless oid
+
+    File.unlink(path)
+    delete_parent_directories(path)
+
+    oid
+  ensure
+    lockfile.rollback
+  end
+
+  private def delete_parent_directories(path)
+    path.dirname.ascend do |dir|
+      break if dir == @heads_path
+      begin
+        Dir.rmdir(dir)
+      rescue Errno::ENOTEMPTY
+        break
+      end
+    end
+  end
+
   private def list_refs(dirname)
     names = Dir.entries(dirname) - [".", ".."]
 

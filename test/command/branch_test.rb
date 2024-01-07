@@ -147,4 +147,28 @@ class Command::TestBranch < Minitest::Test
         new-feature #{repo.database.short_oid(a.oid)} second
     EOF
   end
+
+  def test_delete_branch
+    head = repo.refs.read_head
+
+    jit_cmd("branch", "bug-fix")
+    jit_cmd("branch", "-D", "bug-fix")
+
+    assert_stdout <<~EOF
+      Deleted branch bug-fix (was #{repo.database.short_oid(head)}).
+    EOF
+
+    branches = repo.refs.list_branches
+    refute_includes(branches.map(&:short_name), "bug-fix")
+  end
+
+  def test_fail_to_delete_non_existent_branch
+    jit_cmd("branch", "-D", "no-such-branch")
+
+    assert_status(1)
+
+    assert_stderr <<~EOF
+      error: branch 'no-such-branch' not found.
+    EOF
+  end
 end
