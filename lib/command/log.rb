@@ -2,9 +2,19 @@ module Command
   class Log < Base
     private def define_options
       @options[:abbrev] = :auto
+      @options[:format] = "medium"
 
       @parser.on "--[no-]abbrev-commit" do |value|
         @options[:abbrev] = value
+      end
+
+      @parser.on "--pretty=<format", "--format=<format>" do |format|
+        @options[:format] = format
+      end
+
+      @parser.on "--oneline" do
+        @options[:abbrev] = true if @options[:abbrev] == :auto
+        @options[:format] = "oneline"
       end
     end
 
@@ -30,6 +40,13 @@ module Command
     end
 
     private def show_commit(commit)
+      case @options[:format]
+      when "medium" then show_commit_medium(commit)
+      when "oneline" then show_commit_oneline(commit)
+      end
+    end
+
+    private def show_commit_medium(commit)
       author = commit.author
 
       blank_line
@@ -38,6 +55,10 @@ module Command
       puts "Date:   #{author.readable_time}"
       blank_line
       commit.message.each_line { |line| puts "    #{line}" }
+    end
+
+    private def show_commit_oneline(commit)
+      puts "#{fmt :yellow, abbrev(commit)} #{commit.title_line}"
     end
 
     private def abbrev(commit)

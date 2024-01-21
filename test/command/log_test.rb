@@ -68,4 +68,24 @@ class Command::TestLog < Minitest::Test
           A
     EOF
   end
+
+  def test_print_oneline_format
+    jit_cmd("log", "--oneline")
+
+    assert_stdout <<~EOF
+      #{repo.database.short_oid(@commits[0].oid)} C
+      #{repo.database.short_oid(@commits[1].oid)} B
+      #{repo.database.short_oid(@commits[2].oid)} A
+    EOF
+  end
+
+  def test_print_oneline_format_without_short_commit_ids
+    jit_cmd("log", "--pretty=oneline")
+
+    assert_stdout <<~EOF
+      #{@commits[0].oid} C
+      #{@commits[1].oid} B
+      #{@commits[2].oid} A
+    EOF
+  end
 end
