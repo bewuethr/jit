@@ -4,7 +4,11 @@ require_relative "shared/print_diff"
 module Command
   class Diff < Base
     include PrintDiff
+
     def define_options
+      @options[:patch] = true
+      define_print_diff_options
+
       @parser.on("--cached", "--staged") do
         @options[:cached] = true
       end
@@ -18,6 +22,8 @@ module Command
 
       if @options[:cached]
         diff_head_index
+      elsif @args.size == 2
+        diff_commits
       else
         diff_index_workspace
       end
@@ -26,6 +32,8 @@ module Command
     end
 
     private def diff_head_index
+      return unless @options[:patch]
+
       @status.index_changes.each do |path, state|
         case state
         when :added then print_diff(from_nothing(path), from_index(path))
@@ -36,12 +44,21 @@ module Command
     end
 
     private def diff_index_workspace
+      return unless @options[:patch]
+
       @status.workspace_changes.each do |path, state|
         case state
         when :modified then print_diff(from_index(path), from_file(path))
         when :deleted then print_diff(from_index(path), from_nothing(path))
         end
       end
+    end
+
+    private def diff_commits
+      return unless @options[:patch]
+
+      a, b = @args.map { |rev| Revision.new(repo, rev).resolve }
+      print_commit_diff(a, b)
     end
 
     private def from_head(path)

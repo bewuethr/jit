@@ -121,4 +121,35 @@ class Command::TestLog < Minitest::Test
       #{@commits[2].oid} (refs/heads/topic) A
     EOF
   end
+
+  def test_print_with_patches
+    jit_cmd("log", "--pretty=oneline", "--patch")
+
+    assert_stdout <<~EOF
+      #{@commits[0].oid} C
+      diff --git a/file.txt b/file.txt
+      index 7371f47..96d80cd 100644
+      --- a/file.txt
+      +++ b/file.txt
+      @@ -1,1 +1,1 @@
+      -B
+      +C
+      #{@commits[1].oid} B
+      diff --git a/file.txt b/file.txt
+      index 8c7e5a6..7371f47 100644
+      --- a/file.txt
+      +++ b/file.txt
+      @@ -1,1 +1,1 @@
+      -A
+      +B
+      #{@commits[2].oid} A
+      diff --git a/file.txt b/file.txt
+      new file mode 100644
+      index 0000000..8c7e5a6
+      --- /dev/null
+      +++ b/file.txt
+      @@ -0,0 +1,1 @@
+      +A
+    EOF
+  end
 end

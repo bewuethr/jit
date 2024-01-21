@@ -1,8 +1,14 @@
 require_relative "base"
+require_relative "shared/print_diff"
 
 module Command
   class Log < Base
+    include PrintDiff
+
     private def define_options
+      @options[:patch] = false
+      define_print_diff_options
+
       @options[:abbrev] = :auto
       @options[:format] = "medium"
       @options[:decorate] = "auto"
@@ -51,6 +57,7 @@ module Command
     end
 
     private def blank_line
+      return if @options[:format] == "oneline"
       puts "" if defined? @blank_line
       @blank_line = true
     end
@@ -60,6 +67,8 @@ module Command
       when "medium" then show_commit_medium(commit)
       when "oneline" then show_commit_oneline(commit)
       end
+
+      show_patch(commit)
     end
 
     private def show_commit_medium(commit)
@@ -76,6 +85,13 @@ module Command
     private def show_commit_oneline(commit)
       id = fmt(:yellow, abbrev(commit)) + decorate(commit)
       puts "#{id} #{commit.title_line}"
+    end
+
+    private def show_patch(commit)
+      return unless @options[:patch]
+
+      blank_line
+      print_commit_diff(commit.parent, commit.oid)
     end
 
     private def abbrev(commit)

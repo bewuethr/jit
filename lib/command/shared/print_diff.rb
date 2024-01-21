@@ -13,7 +13,14 @@ module Command
       end
     end
 
+    private def define_print_diff_options
+      @parser.on("-p", "-u", "--patch") { @options[:patch] = true }
+      @parser.on("-s", "--no-patch") { @options[:patch] = false }
+    end
+
     private def from_entry(path, entry)
+      return from_nothing(path) unless entry
+
       blob = repo.database.load(entry.oid)
       Target.new(path, entry.oid, entry.mode.to_s(8), blob.data)
     end
@@ -23,6 +30,16 @@ module Command
     private def header(string) = (puts fmt(:bold, string))
 
     private def short(oid) = repo.database.short_oid(oid)
+
+    private def print_commit_diff(a, b)
+      diff = repo.database.tree_diff(a, b)
+      paths = diff.keys.sort_by(&:to_s)
+
+      paths.each do |path|
+        old_entry, new_entry = diff[path]
+        print_diff(from_entry(path, old_entry), from_entry(path, new_entry))
+      end
+    end
 
     private def print_diff(a, b)
       return if a.oid == b.oid && a.mode == b.mode
