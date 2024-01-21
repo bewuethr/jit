@@ -1,3 +1,4 @@
+require_relative "base"
 require_relative "../revision"
 
 module Command

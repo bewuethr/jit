@@ -1,3 +1,5 @@
+require "pathname"
+
 class Index
   REGULAR_MODE = 0o100644
   EXECUTABLE_MODE = 0o100755

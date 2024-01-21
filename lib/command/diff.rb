@@ -1,8 +1,4 @@
 require_relative "base"
-
-require_relative "../diff"
-require_relative "../pager"
-require_relative "../repository"
 require_relative "shared/print_diff"
 
 module Command

@@ -1,7 +1,7 @@
-require "pathname"
+require "fileutils"
 
 require_relative "base"
-require_relative "../repository"
+require_relative "../refs"
 
 module Command
   class Init < Base

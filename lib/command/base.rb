@@ -1,4 +1,9 @@
 require "optparse"
+require "pathname"
+
+require_relative "../color"
+require_relative "../pager"
+require_relative "../repository"
 
 module Command
   class Base

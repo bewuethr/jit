@@ -1,5 +1,4 @@
 require_relative "base"
-require_relative "../color"
 
 module Command
   class Status < Base

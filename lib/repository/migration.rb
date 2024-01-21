@@ -1,3 +1,5 @@
+require_relative "inspector"
+
 class Repository
   class Migration
     Conflict = Class.new(StandardError)

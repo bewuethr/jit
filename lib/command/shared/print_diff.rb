@@ -1,3 +1,7 @@
+require "pathname"
+
+require_relative "../../diff"
+
 module Command
   module PrintDiff
     NULL_OID = "0" * 40

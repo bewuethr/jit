@@ -1,3 +1,5 @@
+require "pathname"
+
 class Database
   class TreeDiff
     attr_reader :changes

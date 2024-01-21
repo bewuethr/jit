@@ -1,9 +1,10 @@
 require_relative "database"
 require_relative "index"
 require_relative "refs"
+require_relative "workspace"
+
 require_relative "repository/migration"
 require_relative "repository/status"
-require_relative "workspace"
 
 class Repository
   def initialize(git_path)

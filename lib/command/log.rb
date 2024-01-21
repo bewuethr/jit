@@ -1,3 +1,5 @@
+require_relative "base"
+
 module Command
   class Log < Base
     private def define_options

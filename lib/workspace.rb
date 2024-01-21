@@ -1,3 +1,5 @@
+require "fileutils"
+
 class Workspace
   MissingFile = Class.new(StandardError)
   NoPermission = Class.new(StandardError)

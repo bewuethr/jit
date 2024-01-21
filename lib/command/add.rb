@@ -1,7 +1,6 @@
 require "pathname"
 
 require_relative "base"
-require_relative "../repository"
 
 module Command
   class Add < Base

@@ -1,7 +1,8 @@
+require "pathname"
 require "sorted_set"
 
-require_relative "../sorted_hash"
 require_relative "inspector"
+require_relative "../sorted_hash"
 
 class Repository
   class Status

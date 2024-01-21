@@ -1,4 +1,3 @@
-require "digest/sha1"
 require "sorted_set"
 
 require_relative "index/checksum"

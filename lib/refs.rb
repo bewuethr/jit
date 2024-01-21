@@ -1,4 +1,7 @@
+require "fileutils"
+
 require_relative "lockfile"
+require_relative "revision"
 
 class Refs
   HEAD = "HEAD"

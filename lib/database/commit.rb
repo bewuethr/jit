@@ -1,3 +1,5 @@
+require_relative "author"
+
 class Database
   class Commit
     attr_accessor :oid
