@@ -18,6 +18,8 @@ class Command::TestLog < Minitest::Test
       commit_file(message)
     end
 
+    jit_cmd("branch", "topic", "@^^")
+
     @commits = ["@", "@^", "@~2"].map { |rev| load_commit(rev) }
   end
 
@@ -86,6 +88,37 @@ class Command::TestLog < Minitest::Test
       #{@commits[0].oid} C
       #{@commits[1].oid} B
       #{@commits[2].oid} A
+    EOF
+  end
+
+  def test_print_with_short_decorations
+    jit_cmd("log", "--pretty=oneline", "--decorate=short")
+
+    assert_stdout <<~EOF
+      #{@commits[0].oid} (HEAD -> main) C
+      #{@commits[1].oid} B
+      #{@commits[2].oid} (topic) A
+    EOF
+  end
+
+  def test_print_with_detached_head
+    jit_cmd("checkout", "@")
+    jit_cmd("log", "--pretty=oneline", "--decorate=short")
+
+    assert_stdout <<~EOF
+      #{@commits[0].oid} (HEAD, main) C
+      #{@commits[1].oid} B
+      #{@commits[2].oid} (topic) A
+    EOF
+  end
+
+  def test_print_with_full_decorations
+    jit_cmd("log", "--pretty=oneline", "--decorate=full")
+
+    assert_stdout <<~EOF
+      #{@commits[0].oid} (HEAD -> refs/heads/main) C
+      #{@commits[1].oid} B
+      #{@commits[2].oid} (refs/heads/topic) A
     EOF
   end
 end

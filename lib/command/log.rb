@@ -3,12 +3,13 @@ module Command
     private def define_options
       @options[:abbrev] = :auto
       @options[:format] = "medium"
+      @options[:decorate] = "auto"
 
       @parser.on "--[no-]abbrev-commit" do |value|
         @options[:abbrev] = value
       end
 
-      @parser.on "--pretty=<format", "--format=<format>" do |format|
+      @parser.on "--pretty=<format>", "--format=<format>" do |format|
         @options[:format] = format
       end
 
@@ -16,11 +17,24 @@ module Command
         @options[:abbrev] = true if @options[:abbrev] == :auto
         @options[:format] = "oneline"
       end
+
+      @parser.on "--decorate[=<format>]" do |format|
+        @options[:decorate] = format || "short"
+      end
+
+      @parser.on "--no-decorate" do
+        @options[:decorate] = "no"
+      end
     end
 
     def run
       setup_pager
+
+      @reverse_refs = repo.refs.reverse_refs
+      @current_ref = repo.refs.current_ref
+
       each_commit { |commit| show_commit(commit) }
+
       exit 0
     end
 
@@ -50,7 +64,7 @@ module Command
       author = commit.author
 
       blank_line
-      puts fmt(:yellow, "commit #{abbrev(commit)}")
+      puts fmt(:yellow, "commit #{abbrev(commit)}") + decorate(commit)
       puts "Author: #{author.name} <#{author.email}>"
       puts "Date:   #{author.readable_time}"
       blank_line
@@ -58,7 +72,8 @@ module Command
     end
 
     private def show_commit_oneline(commit)
-      puts "#{fmt :yellow, abbrev(commit)} #{commit.title_line}"
+      id = fmt(:yellow, abbrev(commit)) + decorate(commit)
+      puts "#{id} #{commit.title_line}"
     end
 
     private def abbrev(commit)
@@ -67,6 +82,40 @@ module Command
       else
         commit.oid
       end
+    end
+
+    private def decorate(commit)
+      case @options[:decorate]
+      when "auto" then return "" unless @isatty
+      when "no" then return ""
+      end
+
+      refs = @reverse_refs[commit.oid]
+      return "" if refs.empty?
+
+      head, refs = refs.partition { |ref| ref.head? && !@current_ref.head? }
+      names = refs.map { |ref| decoration_name(head.first, ref) }
+
+      fmt(:yellow, " (") + names.join(fmt(:yellow, ", ")) + fmt(:yellow, ")")
+    end
+
+    private def decoration_name(head, ref)
+      case @options[:decorate]
+      when "short", "auto" then name = ref.short_name
+      when "full" then name = ref.path
+      end
+
+      name = fmt(ref_color(ref), name)
+
+      if head && ref == @current_ref
+        name = fmt(ref_color(head), "#{head.path} -> #{name}")
+      end
+
+      name
+    end
+
+    private def ref_color(ref)
+      ref.head? ? [:bold, :cyan] : [:bold, :green]
     end
   end
 end
