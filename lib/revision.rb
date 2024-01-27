@@ -33,11 +33,12 @@ class Revision
   PARENT = /^(.+)\^$/
   ANCESTOR = /^(.+)~(\d+)$/
 
-  REF_ALIASES = {
-    "@" => "HEAD"
-  }
-
   COMMIT = "commit"
+  HEAD = "HEAD"
+
+  REF_ALIASES = {
+    "@" => HEAD
+  }
 
   attr_reader :errors
 

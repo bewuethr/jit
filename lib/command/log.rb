@@ -47,7 +47,8 @@ module Command
     end
 
     private def each_commit
-      oid = repo.refs.read_head
+      start = @args.fetch(0, Revision::HEAD)
+      oid = Revision.new(repo, start).resolve(Revision::COMMIT)
 
       while oid
         commit = repo.database.load(oid)

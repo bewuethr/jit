@@ -91,6 +91,15 @@ class Command::TestLog < Minitest::Test
     EOF
   end
 
+  def test_log_from_specified_commit
+    jit_cmd("log", "--pretty=oneline", "@^")
+
+    assert_stdout <<~EOF
+      #{@commits[1].oid} B
+      #{@commits[2].oid} A
+    EOF
+  end
+
   def test_print_with_short_decorations
     jit_cmd("log", "--pretty=oneline", "--decorate=short")
 
