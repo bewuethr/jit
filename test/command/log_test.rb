@@ -162,3 +162,47 @@ class Command::TestLog < Minitest::Test
     EOF
   end
 end
+
+class Command::TestLogCommitTree < Minitest::Test
+  include CommandHelper
+
+  def commit_file(message, time = nil)
+    write_file("file.txt", message)
+    jit_cmd("add", ".")
+    commit(message, time)
+  end
+
+  def setup
+    super
+
+    #  m1  m2  m3
+    #   o---o---o [main]
+    #        \
+    #         o---o---o---o [topic]
+    #        t1  t2  t3  t4
+    (1..3).each { |n| commit_file("main-#{n}") }
+
+    jit_cmd("branch", "topic", "main^")
+    jit_cmd("checkout", "topic")
+
+    @branch_time = Time.now + 10
+    (1..4).each { |n| commit_file("topic-#{n}", @branch_time) }
+
+    @main = (0..2).map { |n| resolve_revision("main~#{n}") }
+    @topic = (0..3).map { |n| resolve_revision("topic~#{n}") }
+  end
+
+  def test_log_combined_history_of_multiple_branches
+    jit_cmd("log", "--pretty=oneline", "--decorate=short", "main", "topic")
+
+    assert_stdout <<~EOF
+      #{@topic[0]} (HEAD -> topic) topic-4
+      #{@topic[1]} topic-3
+      #{@topic[2]} topic-2
+      #{@topic[3]} topic-1
+      #{@main[0]} (main) main-3
+      #{@main[1]} main-2
+      #{@main[2]} main-1
+    EOF
+  end
+end

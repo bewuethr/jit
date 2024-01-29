@@ -1,18 +1,53 @@
 require_relative "revision"
 
 class RevList
-  def initialize(repo, start)
+  def initialize(repo, revs)
     @repo = repo
-    @start = start || Revision::HEAD
+    @commits = {}
+    @flags = Hash.new { |hash, oid| hash[oid] = Set.new }
+    @queue = []
+
+    revs.each { |rev| handle_revision(rev) }
+    handle_revision(Revision::HEAD) if @queue.empty?
   end
 
-  def each
-    oid = Revision.new(@repo, @start).resolve(Revision::COMMIT)
+  def each = traverse_commits { |commit| yield commit }
 
-    while oid
-      commit = @repo.database.load(oid)
+  private def traverse_commits
+    until @queue.empty?
+      commit = @queue.shift
+      add_parents(commit)
       yield commit
-      oid = commit.parent
     end
+  end
+
+  private def add_parents(commit)
+    return unless mark(commit.oid, :added)
+
+    parent = load_commit(commit.parent)
+    enqueue_commit(parent) if parent
+  end
+
+  private def load_commit(oid)
+    return nil unless oid
+    @commits[oid] ||= @repo.database.load(oid)
+  end
+
+  private def mark(oid, flag) = @flags[oid].add?(flag)
+
+  private def marked?(oid, flag) = @flags[oid].include?(flag)
+
+  private def handle_revision(rev)
+    oid = Revision.new(@repo, rev).resolve(Revision::COMMIT)
+
+    commit = load_commit(oid)
+    enqueue_commit(commit)
+  end
+
+  private def enqueue_commit(commit)
+    return unless mark(commit.oid, :seen)
+
+    index = @queue.find_index { |c| c.date < commit.date }
+    @queue.insert(index || @queue.size, commit)
   end
 end
