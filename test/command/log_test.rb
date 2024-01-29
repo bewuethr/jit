@@ -205,4 +205,45 @@ class Command::TestLogCommitTree < Minitest::Test
       #{@main[2]} main-1
     EOF
   end
+
+  def test_log_difference_from_branch_to_other
+    jit_cmd("log", "--pretty=oneline", "main..topic")
+
+    assert_stdout <<~EOF
+      #{@topic[0]} topic-4
+      #{@topic[1]} topic-3
+      #{@topic[2]} topic-2
+      #{@topic[3]} topic-1
+    EOF
+
+    jit_cmd("log", "--pretty=oneline", "main", "^topic")
+
+    assert_stdout <<~EOF
+      #{@main[0]} main-3
+    EOF
+  end
+
+  def test_exclude_long_branch_with_equal_commit_times
+    jit_cmd("branch", "side", "topic^^")
+    jit_cmd("checkout", "side")
+
+    (1..10).each { |n| commit_file("side-#{n}", @branch_time) }
+
+    jit_cmd("log", "--pretty=oneline", "side..topic", "^main")
+
+    assert_stdout <<~EOF
+      #{@topic[0]} topic-4
+      #{@topic[1]} topic-3
+    EOF
+  end
+
+  def test_log_last_few_commits_on_branch
+    jit_cmd("log", "--pretty=oneline", "@~3..")
+
+    assert_stdout <<~EOF
+      #{@topic[0]} topic-4
+      #{@topic[1]} topic-3
+      #{@topic[2]} topic-2
+    EOF
+  end
 end
