@@ -31,8 +31,9 @@ module Command
 
     private def short(oid) = repo.database.short_oid(oid)
 
-    private def print_commit_diff(a, b)
-      diff = repo.database.tree_diff(a, b)
+    private def print_commit_diff(a, b, differ = nil)
+      differ ||= repo.database
+      diff = differ.tree_diff(a, b)
       paths = diff.keys.sort_by(&:to_s)
 
       paths.each do |path|

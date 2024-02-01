@@ -247,3 +247,76 @@ class Command::TestLogCommitTree < Minitest::Test
     EOF
   end
 end
+
+class Command::TestLogChangingDifferentFiles < Minitest::Test
+  include CommandHelper
+
+  def commit_tree(message, files)
+    files.each do |path, contents|
+      write_file(path, contents)
+    end
+    jit_cmd("add", ".")
+    commit(message)
+  end
+
+  def setup
+    super
+
+    commit_tree("first", "a/1.txt" => "1", "b/c/2.txt" => "2")
+    commit_tree("second", "a/1.txt" => "10", "b/3.txt" => "3")
+    commit_tree("third", "b/c/2.txt" => "4")
+
+    @commits = ["@^^", "@^", "@"].map { |rev| load_commit(rev) }
+  end
+
+  def test_log_commits_that_change_file
+    jit_cmd("log", "--pretty=oneline", "a/1.txt")
+
+    assert_stdout <<~EOF
+      #{@commits[1].oid} second
+      #{@commits[0].oid} first
+    EOF
+  end
+
+  def test_log_commits_that_change_directory
+    jit_cmd("log", "--pretty=oneline", "b")
+
+    assert_stdout <<~EOF
+      #{@commits[2].oid} third
+      #{@commits[1].oid} second
+      #{@commits[0].oid} first
+    EOF
+  end
+
+  def test_log_commits_that_change_nested_directory
+    jit_cmd("log", "--pretty=oneline", "b/c")
+
+    assert_stdout <<~EOF
+      #{@commits[2].oid} third
+      #{@commits[0].oid} first
+    EOF
+  end
+
+  def test_log_commits_with_patches_for_selected_files
+    jit_cmd("log", "--pretty=oneline", "--patch", "a/1.txt")
+
+    assert_stdout <<~EOF
+      #{@commits[1].oid} second
+      diff --git a/a/1.txt b/a/1.txt
+      index 56a6051..9a03714 100644
+      --- a/a/1.txt
+      +++ b/a/1.txt
+      @@ -1,1 +1,1 @@
+      -1
+      +10
+      #{@commits[0].oid} first
+      diff --git a/a/1.txt b/a/1.txt
+      new file mode 100644
+      index 0000000..56a6051
+      --- /dev/null
+      +++ b/a/1.txt
+      @@ -0,0 +1,1 @@
+      +1
+    EOF
+  end
+end

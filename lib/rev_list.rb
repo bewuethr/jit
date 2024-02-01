@@ -1,3 +1,6 @@
+require "pathname"
+
+require_relative "path_filter"
 require_relative "revision"
 
 class RevList
@@ -11,9 +14,13 @@ class RevList
     @queue = []
     @limited = false
     @output = []
+    @prune = []
+    @diffs = {}
 
     revs.each { |rev| handle_revision(rev) }
     handle_revision(Revision::HEAD) if @queue.empty?
+
+    @filter = PathFilter.build(@prune)
   end
 
   def each
@@ -21,8 +28,15 @@ class RevList
     traverse_commits { |commit| yield commit }
   end
 
+  def tree_diff(old_oid, new_oid)
+    key = [old_oid, new_oid]
+    @diffs[key] ||= @repo.database.tree_diff(old_oid, new_oid, @filter)
+  end
+
   private def handle_revision(rev)
-    if (match = RANGE.match(rev))
+    if @repo.workspace.stat_file(rev)
+      @prune.push(Pathname.new(rev))
+    elsif (match = RANGE.match(rev))
       set_start_point(match[1], false)
       set_start_point(match[2], true)
     elsif (match = EXCLUDE.match(rev))
@@ -80,7 +94,7 @@ class RevList
     @queue = @output
   end
 
-  def still_interesting?
+  private def still_interesting?
     return false if @queue.empty?
 
     oldest_out = @output.last
@@ -101,7 +115,10 @@ class RevList
     until @queue.empty?
       commit = @queue.shift
       add_parents(commit) unless @limited
+
       next if marked?(commit.oid, :uninteresting)
+      next if marked?(commit.oid, :treesame)
+
       yield commit
     end
   end
@@ -110,12 +127,18 @@ class RevList
     return unless mark(commit.oid, :added)
 
     parent = load_commit(commit.parent)
-    return unless parent
 
     if marked?(commit.oid, :uninteresting)
-      mark_parents_uninteresting(parent)
+      mark_parents_uninteresting(parent) if parent
+    else
+      simplify_commit(commit)
     end
 
-    enqueue_commit(parent)
+    enqueue_commit(parent) if parent
+  end
+
+  private def simplify_commit(commit)
+    return if @prune.empty?
+    mark(commit.oid, :treesame) if tree_diff(commit.parent, commit.oid).empty?
   end
 end

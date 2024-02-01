@@ -83,7 +83,7 @@ module Command
       return unless @options[:patch]
 
       blank_line
-      print_commit_diff(commit.parent, commit.oid)
+      print_commit_diff(commit.parent, commit.oid, @rev_list)
     end
 
     private def abbrev(commit)
