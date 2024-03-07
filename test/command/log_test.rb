@@ -383,4 +383,14 @@ class Command::TestLogGraphOfCommits < Command::TestLog
       +D
     EOF
   end
+
+  def test_do_not_list_merges_with_treesame_parents_for_prune_paths
+    jit_cmd("log", "--pretty=oneline", "g.txt")
+
+    assert_stdout <<~EOF
+      #{@topic[1]} G
+      #{@topic[2]} F
+      #{@topic[3]} E
+    EOF
+  end
 end
