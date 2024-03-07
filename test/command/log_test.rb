@@ -5,12 +5,24 @@ require_relative "../command_helper"
 class Command::TestLog < Minitest::Test
   include CommandHelper
 
-  def commit_file(message)
+  def commit_file(message, time = nil)
     write_file("file.txt", message)
     jit_cmd("add", ".")
-    commit(message)
+    commit(message, time)
   end
 
+  def commit_tree(message, files, time = nil)
+    files.each do |path, contents|
+      write_file(path, contents)
+    end
+    jit_cmd("add", ".")
+    commit(message, time)
+  end
+end
+
+class Command::TestLogWithChainOfCommits < Command::TestLog
+  #   o---o---o
+  #   A   B   C
   def setup
     super
 
@@ -163,23 +175,15 @@ class Command::TestLog < Minitest::Test
   end
 end
 
-class Command::TestLogCommitTree < Minitest::Test
-  include CommandHelper
-
-  def commit_file(message, time = nil)
-    write_file("file.txt", message)
-    jit_cmd("add", ".")
-    commit(message, time)
-  end
-
+class Command::TestLogCommitTree < Command::TestLog
+  #  m1  m2  m3
+  #   o---o---o [main]
+  #        \
+  #         o---o---o---o [topic]
+  #        t1  t2  t3  t4
   def setup
     super
 
-    #  m1  m2  m3
-    #   o---o---o [main]
-    #        \
-    #         o---o---o---o [topic]
-    #        t1  t2  t3  t4
     (1..3).each { |n| commit_file("main-#{n}") }
 
     jit_cmd("branch", "topic", "main^")
@@ -248,17 +252,7 @@ class Command::TestLogCommitTree < Minitest::Test
   end
 end
 
-class Command::TestLogChangingDifferentFiles < Minitest::Test
-  include CommandHelper
-
-  def commit_tree(message, files)
-    files.each do |path, contents|
-      write_file(path, contents)
-    end
-    jit_cmd("add", ".")
-    commit(message)
-  end
-
+class Command::TestLogChangingDifferentFiles < Command::TestLog
   def setup
     super
 
@@ -317,6 +311,52 @@ class Command::TestLogChangingDifferentFiles < Minitest::Test
       +++ b/a/1.txt
       @@ -0,0 +1,1 @@
       +1
+    EOF
+  end
+end
+
+class Command::TestLogGraphOfCommits < Command::TestLog
+  #   A   B   C   D   J   K
+  #   o---o---o---o---o---o [master]
+  #        \         /
+  #         o---o---o---o [topic]
+  #         E   F   G   H
+  def setup
+    super
+
+    time = Time.now
+
+    ("A".."B").each { |n| commit_tree(n, {"f.txt" => n}, time) }
+    ("C".."D").each { |n| commit_tree(n, {"f.txt" => n}, time + 1) }
+
+    jit_cmd("branch", "topic", "main~2")
+    jit_cmd("checkout", "topic")
+
+    ("E".."H").each { |n| commit_tree(n, {"g.txt" => n}, time + 2) }
+
+    jit_cmd("checkout", "main")
+    set_stdin("J")
+    jit_cmd("merge", "topic^")
+
+    commit_tree("K", {"f.txt" => "K"}, time + 3)
+
+    @main = (0..5).map { |n| resolve_revision("main~#{n}") }
+    @topic = (0..3).map { |n| resolve_revision("topic~#{n}") }
+  end
+
+  def test_log_concurrent_branches_leading_to_merge
+    jit_cmd("log", "--pretty=oneline")
+
+    assert_stdout <<~EOF
+      #{@main[0]} K
+      #{@main[1]} J
+      #{@topic[1]} G
+      #{@topic[2]} F
+      #{@topic[3]} E
+      #{@main[2]} D
+      #{@main[3]} C
+      #{@main[4]} B
+      #{@main[5]} A
     EOF
   end
 end

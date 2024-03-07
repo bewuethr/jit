@@ -75,9 +75,14 @@ class RevList
   private def mark(oid, flag) = @flags[oid].add?(flag)
 
   private def mark_parents_uninteresting(commit)
-    while commit&.parent
-      break unless mark(commit.parent, :uninteresting)
-      commit = @commits[commit.parent]
+    queue = commit.parents.clone
+
+    until queue.empty?
+      oid = queue.shift
+      next unless mark(oid, :uninteresting)
+
+      commit = @commits[oid]
+      queue.concat(commit.parents) if commit
     end
   end
 
@@ -126,15 +131,15 @@ class RevList
   private def add_parents(commit)
     return unless mark(commit.oid, :added)
 
-    parent = load_commit(commit.parent)
+    parents = commit.parents.map { |oid| load_commit(oid) }
 
     if marked?(commit.oid, :uninteresting)
-      mark_parents_uninteresting(parent) if parent
+      parents.each { |parent| mark_parents_uninteresting(parent) }
     else
       simplify_commit(commit)
     end
 
-    enqueue_commit(parent) if parent
+    parents.each { |parent| enqueue_commit(parent) }
   end
 
   private def simplify_commit(commit)
