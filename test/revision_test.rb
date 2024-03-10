@@ -19,7 +19,7 @@ class TestRevision < Minitest::Test
   end
 
   def test_parse_parent_ref
-    assert_parse("HEAD^", Revision::Parent.new(Revision::Ref.new("HEAD")))
+    assert_parse("HEAD^", Revision::Parent.new(Revision::Ref.new("HEAD"), 1))
   end
 
   def test_parse_parent_ref_chain
@@ -28,9 +28,12 @@ class TestRevision < Minitest::Test
       Revision::Parent.new(
         Revision::Parent.new(
           Revision::Parent.new(
-            Revision::Ref.new("main")
-          )
-        )
+            Revision::Ref.new("main"),
+            1
+          ),
+          1
+        ),
+        1
       )
     )
   end
@@ -48,8 +51,10 @@ class TestRevision < Minitest::Test
             Revision::Ancestor.new(
               Revision::Ref.new("HEAD"),
               2
-            )
-          )
+            ),
+            1
+          ),
+          1
         ),
         3
       )

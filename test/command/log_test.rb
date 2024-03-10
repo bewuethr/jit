@@ -364,6 +364,17 @@ class Command::TestLogGraphOfCommitsNoUndone < Command::TestLogGraphOfCommits
     EOF
   end
 
+  def test_log_first_parent_of_merge
+    jit_cmd("log", "--pretty=oneline", "main^^")
+
+    assert_stdout <<~EOF
+      #{@main[2]} D
+      #{@main[3]} C
+      #{@main[4]} B
+      #{@main[5]} A
+    EOF
+  end
+
   def test_no_patches_for_merge_commits
     jit_cmd("log", "--pretty=oneline", "--patch", "topic..main", "^main^^^")
 

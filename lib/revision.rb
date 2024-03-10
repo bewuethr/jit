@@ -5,8 +5,8 @@ class Revision
     def resolve(context) = context.read_ref(name)
   end
 
-  Parent = Struct.new(:rev) do
-    def resolve(context) = context.commit_parent(rev.resolve(context))
+  Parent = Struct.new(:rev, :n) do
+    def resolve(context) = context.commit_parent(rev.resolve(context), n)
   end
 
   Ancestor = Struct.new(:rev, :n) do
@@ -30,7 +30,7 @@ class Revision
     | [\x00-\x20*:?\[\\^~\x7f]
   /x
 
-  PARENT = /^(.+)\^$/
+  PARENT = /^(.+)\^(\d*)$/
   ANCESTOR = /^(.+)~(\d+)$/
 
   COMMIT = "commit"
@@ -52,7 +52,8 @@ class Revision
   def self.parse(revision)
     if (match = PARENT.match(revision))
       rev = Revision.parse(match[1])
-      rev ? Parent.new(rev) : nil
+      n = (match[2] == "") ? 1 : match[2].to_i
+      rev ? Parent.new(rev, n) : nil
     elsif (match = ANCESTOR.match(revision))
       rev = Revision.parse(match[1])
       rev ? Ancestor.new(rev, match[2].to_i) : nil
@@ -73,11 +74,13 @@ class Revision
     raise InvalidObject, "Not a valid object name: '#{@expr}'."
   end
 
-  def commit_parent(oid)
+  def commit_parent(oid, n = 1)
     return nil unless oid
 
     commit = load_typed_object(oid, COMMIT)
-    commit&.parent
+    return nil unless commit
+
+    commit.parents[n - 1]
   end
 
   def read_ref(name)
