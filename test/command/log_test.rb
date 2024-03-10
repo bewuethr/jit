@@ -317,7 +317,7 @@ end
 
 class Command::TestLogGraphOfCommits < Command::TestLog
   #   A   B   C   D   J   K
-  #   o---o---o---o---o---o [master]
+  #   o---o---o---o---o---o [main]
   #        \         /
   #         o---o---o---o [topic]
   #         E   F   G   H
@@ -326,7 +326,9 @@ class Command::TestLogGraphOfCommits < Command::TestLog
 
     time = Time.now
 
-    ("A".."B").each { |n| commit_tree(n, {"f.txt" => n}, time) }
+    commit_tree("A", {"f.txt" => "0", "g.txt" => "0"}, time)
+    commit_tree("B", {"f.txt" => "B"}, time)
+
     ("C".."D").each { |n| commit_tree(n, {"f.txt" => n}, time + 1) }
 
     jit_cmd("branch", "topic", "main~2")
@@ -343,7 +345,9 @@ class Command::TestLogGraphOfCommits < Command::TestLog
     @main = (0..5).map { |n| resolve_revision("main~#{n}") }
     @topic = (0..3).map { |n| resolve_revision("topic~#{n}") }
   end
+end
 
+class Command::TestLogGraphOfCommitsNoUndone < Command::TestLogGraphOfCommits
   def test_log_concurrent_branches_leading_to_merge
     jit_cmd("log", "--pretty=oneline")
 
@@ -391,6 +395,37 @@ class Command::TestLogGraphOfCommits < Command::TestLog
       #{@topic[1]} G
       #{@topic[2]} F
       #{@topic[3]} E
+      #{@main[5]} A
+    EOF
+  end
+end
+
+class Command::TestLogGraphOfCommitsWithUndone < Command::TestLogGraphOfCommits
+  #          C    G   H
+  def setup
+    super
+
+    time = Time.now
+
+    jit_cmd("branch", "aba", "main~4")
+    jit_cmd("checkout", "aba")
+
+    %w[C 0].each { |n| commit_tree(n, {"g.txt" => n}, time + 1) }
+
+    set_stdin("J")
+    jit_cmd("merge", "topic^")
+
+    commit_tree("K", {"f.txt" => "K"}, time + 3)
+  end
+
+  def test_do_not_list_commits_on_filtered_branch
+    jit_cmd("log", "--pretty=oneline", "g.txt")
+
+    assert_stdout <<~EOF
+      #{@topic[1]} G
+      #{@topic[2]} F
+      #{@topic[3]} E
+      #{@main[5]} A
     EOF
   end
 end
