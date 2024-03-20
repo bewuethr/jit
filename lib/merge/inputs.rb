@@ -17,6 +17,8 @@ module Merge
       @base_oids = common.find
     end
 
+    def already_merged? = @base_oids == [@right_oid]
+
     private def resolve_rev(rev)
       Revision.new(@repo, rev).resolve(Revision::COMMIT)
     end

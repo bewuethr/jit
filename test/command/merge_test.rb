@@ -15,6 +15,30 @@ class Command::TestMerge < Minitest::Test
   end
 end
 
+class Command::TestMergeAncestor < Command::TestMerge
+  def setup
+    super
+
+    commit_tree("A", "f.txt" => "1")
+    commit_tree("B", "f.txt" => "2")
+    commit_tree("C", "f.txt" => "3")
+
+    jit_cmd("merge", "@^")
+  end
+
+  def test_print_up_to_date_message
+    assert_stdout("Already up to date.\n")
+  end
+
+  def test_does_not_change_repo_state
+    commit = load_commit("@")
+    assert_equal("C", commit.message)
+
+    jit_cmd("status", "--porcelain")
+    assert_stdout("")
+  end
+end
+
 class Command::TestMergeUnconflictedTwoFiles < Command::TestMerge
   #   A   B   M
   #   o---o---o
