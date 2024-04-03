@@ -39,6 +39,38 @@ class Command::TestMergeAncestor < Command::TestMerge
   end
 end
 
+class Command::TestFastForwardMerge < Command::TestMerge
+  def setup
+    super
+
+    commit_tree("A", "f.txt" => "1")
+    commit_tree("B", "f.txt" => "2")
+    commit_tree("C", "f.txt" => "3")
+
+    jit_cmd("branch", "topic", "@^^")
+    jit_cmd("checkout", "topic")
+
+    set_stdin("M")
+    jit_cmd("merge", "main")
+  end
+
+  def test_print_fast_forward_message
+    a, b = ["main^^", "main"].map { |rev| resolve_revision(rev) }
+    assert_stdout <<~EOF
+      Updating #{repo.database.short_oid(a)}..#{repo.database.short_oid(b)}
+      Fast-forward
+    EOF
+  end
+
+  def test_update_current_branch_head
+    commit = load_commit("@")
+    assert_equal("C", commit.message)
+
+    jit_cmd("status", "--porcelain")
+    assert_stdout("")
+  end
+end
+
 class Command::TestMergeUnconflictedTwoFiles < Command::TestMerge
   #   A   B   M
   #   o---o---o

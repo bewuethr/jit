@@ -19,6 +19,8 @@ module Merge
 
     def already_merged? = @base_oids == [@right_oid]
 
+    def fast_forward? = @base_oids == [@left_oid]
+
     private def resolve_rev(rev)
       Revision.new(@repo, rev).resolve(Revision::COMMIT)
     end
