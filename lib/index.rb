@@ -100,9 +100,24 @@ class Index
     @changed = true
   end
 
+  def add_conflict_set(pathname, items)
+    remove_entry_with_stage(pathname, 0)
+
+    items.each_with_index do |item, n|
+      next unless item
+      entry = Entry.create_from_db(pathname, item, n + 1)
+      store_entry(entry)
+    end
+    @changed = true
+  end
+
   def discard_conflicts(entry)
     entry.parent_directories.each { |parent| remove_entry(parent) }
     remove_children(entry.path)
+  end
+
+  def conflict?
+    @entries.any? { |key, entry| entry.stage > 0 }
   end
 
   def remove_children(path)
