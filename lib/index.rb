@@ -83,8 +83,8 @@ class Index
     end
   end
 
-  def entry_for_path(path)
-    @entries[path.to_s]
+  def entry_for_path(path, stage = 0)
+    @entries[[path.to_s, stage]]
   end
 
   def add(pathname, oid, stat)
@@ -113,7 +113,11 @@ class Index
   end
 
   def remove_entry(pathname)
-    entry = @entries[pathname.to_s]
+    3.times { |stage| remove_entry_with_stage(pathname, stage) }
+  end
+
+  def remove_entry_with_stage(pathname, stage)
+    entry = @entries[[pathname.to_s, stage]]
     return unless entry
 
     @keys.delete(entry.key)
@@ -156,7 +160,9 @@ class Index
 
   def release_lock = @lockfile.rollback
 
-  def tracked_file?(path) = @entries.has_key?(path.to_s)
+  def tracked_file?(path)
+    (0..3).any? { |stage| @entries.has_key?([path.to_s, stage]) }
+  end
 
   def tracked?(path) = tracked_file?(path) || @parents.has_key?(path.to_s)
 end

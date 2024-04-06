@@ -44,7 +44,9 @@ class Index
       string
     end
 
-    def key = path
+    def key = [path, stage]
+
+    def stage = (flags >> 12) & 0x03
 
     def stat_match?(stat)
       mode == Entry.mode_for_stat(stat) and (size == 0 or size == stat.size)
