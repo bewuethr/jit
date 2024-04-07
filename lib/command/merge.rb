@@ -50,6 +50,7 @@ module Command
       merge.execute
 
       repo.index.write_updates
+      exit 1 if repo.index.conflict?
     end
 
     private def commit_merge
