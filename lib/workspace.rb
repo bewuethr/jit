@@ -86,4 +86,9 @@ class Workspace
     File.unlink(path) if stat&.file?
     Dir.mkdir(path) unless stat&.directory?
   end
+
+  def write_file(path, data)
+    flags = File::WRONLY | File::CREAT | File::TRUNC
+    File.open(@pathname.join(path), flags) { |f| f.write(data) }
+  end
 end

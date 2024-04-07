@@ -369,6 +369,70 @@ class Command::TestMergeConflictedAddAddModeConflict < Command::TestMerge
   end
 end
 
+class Command::TestMergeConflictedFileDirectoryAddition < Command::TestMerge
+  def setup
+    super
+
+    merge3(
+      {"f.txt" => "1"},
+      {"g.txt" => "2"},
+      {"g.txt/nested.txt" => "3"}
+    )
+  end
+
+  def test_put_namespaced_copy_of_conflicted_file_in_workspace
+    assert_workspace({
+      "f.txt" => "1",
+      "g.txt~HEAD" => "2",
+      "g.txt/nested.txt" => "3"
+    })
+  end
+
+  def test_record_conflict_in_index
+    assert_index(
+      ["f.txt", 0],
+      ["g.txt", 2],
+      ["g.txt/nested.txt", 0]
+    )
+  end
+
+  def test_do_not_write_merge_commit
+    assert_no_merge
+  end
+end
+
+class Command::TestMergeConflictedDirectoryFileAddition < Command::TestMerge
+  def setup
+    super
+
+    merge3(
+      {"f.txt" => "1"},
+      {"g.txt/nested.txt" => "2"},
+      {"g.txt" => "3"}
+    )
+  end
+
+  def test_put_namespaced_copy_of_conflicted_file_in_workspace
+    assert_workspace({
+      "f.txt" => "1",
+      "g.txt~topic" => "3",
+      "g.txt/nested.txt" => "2"
+    })
+  end
+
+  def test_record_conflict_in_index
+    assert_index(
+      ["f.txt", 0],
+      ["g.txt", 3],
+      ["g.txt/nested.txt", 0]
+    )
+  end
+
+  def test_do_not_write_merge_commit
+    assert_no_merge
+  end
+end
+
 class Command::TestMergeConflictedEditEdit < Command::TestMerge
   def setup
     super
@@ -451,6 +515,68 @@ class Command::TestMergeConflictedDeleteEdit < Command::TestMerge
     assert_index(
       ["f.txt", 1],
       ["f.txt", 3]
+    )
+  end
+
+  def test_do_not_write_merge_commit
+    assert_no_merge
+  end
+end
+
+class Command::TestMergeConflictedEditAddParent < Command::TestMerge
+  def setup
+    super
+
+    merge3(
+      {"nest/f.txt" => "1"},
+      {"nest/f.txt" => "2"},
+      {"nest" => "3"}
+    )
+  end
+
+  def test_put_namespaced_copy_of_conflicted_file_in_workspace
+    assert_workspace({
+      "nest/f.txt" => "2",
+      "nest~topic" => "3"
+    })
+  end
+
+  def test_record_conflict_in_index
+    assert_index(
+      ["nest", 3],
+      ["nest/f.txt", 1],
+      ["nest/f.txt", 2]
+    )
+  end
+
+  def test_do_not_write_merge_commit
+    assert_no_merge
+  end
+end
+
+class Command::TestMergeConflictedEditAddChild < Command::TestMerge
+  def setup
+    super
+
+    merge3(
+      {"nest/f.txt" => "1"},
+      {"nest/f.txt" => "2"},
+      {"nest/f.txt" => nil, "nest/f.txt/g.txt" => "3"}
+    )
+  end
+
+  def test_put_namespaced_copy_of_conflicted_file_in_workspace
+    assert_workspace({
+      "nest/f.txt~HEAD" => "2",
+      "nest/f.txt/g.txt" => "3"
+    })
+  end
+
+  def test_record_conflict_in_index
+    assert_index(
+      ["nest/f.txt", 1],
+      ["nest/f.txt", 2],
+      ["nest/f.txt/g.txt", 0]
     )
   end
 

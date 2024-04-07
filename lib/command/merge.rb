@@ -12,15 +12,16 @@ module Command
 
     def run
       @inputs = ::Merge::Inputs.new(repo, Revision::HEAD, @args[0])
-      handle_merged_ancestors if @inputs.already_merged?
+      handle_merged_ancestor if @inputs.already_merged?
       handle_fast_forward if @inputs.fast_forward?
 
       resolve_merge
       commit_merge
+
       exit 0
     end
 
-    private def handle_merged_ancestors
+    private def handle_merged_ancestor
       puts "Already up to date."
       exit 0
     end
