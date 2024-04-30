@@ -312,6 +312,14 @@ class Command::TestMergeConflictedAddAdd < Command::TestMerge
     )
   end
 
+  def test_print_merge_conflict
+    assert_stdout <<~EOF
+      Auto-merging g.txt
+      CONFLICT (add/add): Merge conflict in g.txt
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
+  end
+
   def test_put_conflicted_file_in_workspace
     assert_workspace({
       "f.txt" => "1",
@@ -347,6 +355,14 @@ class Command::TestMergeConflictedAddAddModeConflict < Command::TestMerge
       {"g.txt" => "2"},
       {"g.txt" => ["2"]}
     )
+  end
+
+  def test_print_merge_conflict
+    assert_stdout <<~EOF
+      Auto-merging g.txt
+      CONFLICT (add/add): Merge conflict in g.txt
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
   end
 
   def test_put_conflicted_file_in_workspace
@@ -388,6 +404,14 @@ class Command::TestMergeConflictedFileDirectoryAddition < Command::TestMerge
     })
   end
 
+  def test_print_merge_conflict
+    assert_stdout <<~EOF
+      Adding g.txt/nested.txt
+      CONFLICT (file/directory): There is a directory with name g.txt in topic. Adding g.txt as g.txt~HEAD
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
+  end
+
   def test_record_conflict_in_index
     assert_index(
       ["f.txt", 0],
@@ -410,6 +434,14 @@ class Command::TestMergeConflictedDirectoryFileAddition < Command::TestMerge
       {"g.txt/nested.txt" => "2"},
       {"g.txt" => "3"}
     )
+  end
+
+  def test_print_merge_conflict
+    assert_stdout <<~EOF
+      Adding g.txt/nested.txt
+      CONFLICT (directory/file): There is a directory with name g.txt in HEAD. Adding g.txt as g.txt~topic
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
   end
 
   def test_put_namespaced_copy_of_conflicted_file_in_workspace
@@ -442,6 +474,14 @@ class Command::TestMergeConflictedEditEdit < Command::TestMerge
       {"f.txt" => "2\n"},
       {"f.txt" => "3\n"}
     )
+  end
+
+  def test_print_merge_conflict
+    assert_stdout <<~EOF
+      Auto-merging f.txt
+      CONFLICT (content): Merge conflict in f.txt
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
   end
 
   def test_put_conflicted_file_in_workspace
@@ -480,6 +520,13 @@ class Command::TestMergeConflictedEditDelete < Command::TestMerge
     )
   end
 
+  def test_print_merge_conflict
+    assert_stdout <<~EOF
+      CONFLICT (modify/delete): f.txt deleted in topic and modified in HEAD. Version HEAD of f.txt left in tree.
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
+  end
+
   def test_put_left_version_in_workspace
     assert_workspace("f.txt" => "2")
   end
@@ -507,6 +554,13 @@ class Command::TestMergeConflictedDeleteEdit < Command::TestMerge
     )
   end
 
+  def test_print_merge_conflict
+    assert_stdout <<~EOF
+      CONFLICT (modify/delete): f.txt deleted in HEAD and modified in topic. Version topic of f.txt left in tree.
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
+  end
+
   def test_put_right_version_in_workspace
     assert_workspace("f.txt" => "3")
   end
@@ -532,6 +586,14 @@ class Command::TestMergeConflictedEditAddParent < Command::TestMerge
       {"nest/f.txt" => "2"},
       {"nest" => "3"}
     )
+  end
+
+  def test_print_merge_conflicts
+    assert_stdout <<~EOF
+      CONFLICT (modify/delete): nest/f.txt deleted in topic and modified in HEAD. Version HEAD of nest/f.txt left in tree.
+      CONFLICT (directory/file): There is a directory with name nest in HEAD. Adding nest as nest~topic
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
   end
 
   def test_put_namespaced_copy_of_conflicted_file_in_workspace
@@ -563,6 +625,14 @@ class Command::TestMergeConflictedEditAddChild < Command::TestMerge
       {"nest/f.txt" => "2"},
       {"nest/f.txt" => nil, "nest/f.txt/g.txt" => "3"}
     )
+  end
+
+  def test_print_merge_conflict
+    assert_stdout <<~EOF
+      Adding nest/f.txt/g.txt
+      CONFLICT (modify/delete): nest/f.txt deleted in topic and modified in HEAD. Version HEAD of nest/f.txt left in tree at nest/f.txt~HEAD.
+      Automatic merge failed; fix conflicts and then commit the result.
+    EOF
   end
 
   def test_put_namespaced_copy_of_conflicted_file_in_workspace
