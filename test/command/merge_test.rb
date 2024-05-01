@@ -344,6 +344,14 @@ class Command::TestMergeConflictedAddAdd < Command::TestMerge
   def test_do_not_write_merge_commit
     assert_no_merge
   end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      AA g.txt
+    EOF
+  end
 end
 
 class Command::TestMergeConflictedAddAddModeConflict < Command::TestMerge
@@ -382,6 +390,14 @@ class Command::TestMergeConflictedAddAddModeConflict < Command::TestMerge
 
   def test_do_not_write_merge_commit
     assert_no_merge
+  end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      AA g.txt
+    EOF
   end
 end
 
@@ -423,6 +439,16 @@ class Command::TestMergeConflictedFileDirectoryAddition < Command::TestMerge
   def test_do_not_write_merge_commit
     assert_no_merge
   end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      AU g.txt
+      A  g.txt/nested.txt
+      ?? g.txt~HEAD
+    EOF
+  end
 end
 
 class Command::TestMergeConflictedDirectoryFileAddition < Command::TestMerge
@@ -462,6 +488,15 @@ class Command::TestMergeConflictedDirectoryFileAddition < Command::TestMerge
 
   def test_do_not_write_merge_commit
     assert_no_merge
+  end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UA g.txt
+      ?? g.txt~topic
+    EOF
   end
 end
 
@@ -507,6 +542,14 @@ class Command::TestMergeConflictedEditEdit < Command::TestMerge
   def test_do_not_write_merge_commit
     assert_no_merge
   end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UU f.txt
+    EOF
+  end
 end
 
 class Command::TestMergeConflictedEditDelete < Command::TestMerge
@@ -541,6 +584,14 @@ class Command::TestMergeConflictedEditDelete < Command::TestMerge
   def test_do_not_write_merge_commit
     assert_no_merge
   end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UD f.txt
+    EOF
+  end
 end
 
 class Command::TestMergeConflictedDeleteEdit < Command::TestMerge
@@ -574,6 +625,14 @@ class Command::TestMergeConflictedDeleteEdit < Command::TestMerge
 
   def test_do_not_write_merge_commit
     assert_no_merge
+  end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      DU f.txt
+    EOF
   end
 end
 
@@ -614,6 +673,16 @@ class Command::TestMergeConflictedEditAddParent < Command::TestMerge
   def test_do_not_write_merge_commit
     assert_no_merge
   end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UA nest
+      UD nest/f.txt
+      ?? nest~topic
+    EOF
+  end
 end
 
 class Command::TestMergeConflictedEditAddChild < Command::TestMerge
@@ -652,6 +721,16 @@ class Command::TestMergeConflictedEditAddChild < Command::TestMerge
 
   def test_do_not_write_merge_commit
     assert_no_merge
+  end
+
+  def test_report_conflict_in_status
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UD nest/f.txt
+      A  nest/f.txt/g.txt
+      ?? nest/f.txt~HEAD
+    EOF
   end
 end
 

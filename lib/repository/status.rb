@@ -6,7 +6,8 @@ require_relative "../sorted_hash"
 
 class Repository
   class Status
-    attr_reader :changed, :index_changes, :workspace_changes, :untracked, :stats, :head_tree
+    attr_reader :changed, :index_changes, :conflicts, :workspace_changes,
+      :untracked, :stats, :head_tree
 
     def initialize(repository)
       @repo = repository
@@ -16,6 +17,7 @@ class Repository
 
       @changed = SortedSet.new
       @index_changes = SortedHash.new
+      @conflicts = SortedHash.new
       @workspace_changes = SortedHash.new
       @untracked = SortedSet.new
 
@@ -67,8 +69,14 @@ class Repository
 
     private def check_index_entries
       @repo.index.each_entry do |entry|
-        check_index_against_workspace(entry)
-        check_index_against_head_tree(entry)
+        if entry.stage == 0
+          check_index_against_workspace(entry)
+          check_index_against_head_tree(entry)
+        else
+          @changed.add(entry.path)
+          @conflicts[entry.path] ||= []
+          @conflicts[entry.path].push(entry.stage)
+        end
       end
     end
 
