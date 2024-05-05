@@ -108,11 +108,11 @@ module Merge
       right_blob = @repo.database.load(right_oid)
 
       [
-        "<<<<<<<< #{@inputs.left_name}\n",
+        "<<<<<<< #{@inputs.left_name}\n",
         left_blob.data,
-        "========\n",
+        "=======\n",
         right_blob.data,
-        ">>>>>>>> #{@inputs.right_name}\n"
+        ">>>>>>> #{@inputs.right_name}\n"
       ].join("")
     end
 

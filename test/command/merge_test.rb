@@ -324,11 +324,11 @@ class Command::TestMergeConflictedAddAdd < Command::TestMerge
     assert_workspace({
       "f.txt" => "1",
       "g.txt" => <<~EOF
-        <<<<<<<< HEAD
+        <<<<<<< HEAD
         2
-        ========
+        =======
         3
-        >>>>>>>> topic
+        >>>>>>> topic
       EOF
     })
   end
@@ -356,6 +356,42 @@ class Command::TestMergeConflictedAddAdd < Command::TestMerge
   def test_list_file_as_unmerged_in_diff
     jit_cmd("diff")
     assert_stdout "* Unmerged path g.txt\n"
+  end
+
+  def test_show_diff_against_our_version
+    jit_cmd("diff", "--ours")
+
+    assert_stdout <<~EOF
+      * Unmerged path g.txt
+      diff --git a/g.txt b/g.txt
+      index 0cfbf08..2603ab2 100644
+      --- a/g.txt
+      +++ b/g.txt
+      @@ -1,1 +1,5 @@
+      +<<<<<<< HEAD
+       2
+      +=======
+      +3
+      +>>>>>>> topic
+    EOF
+  end
+
+  def test_show_diff_against_their_version
+    jit_cmd("diff", "--theirs")
+
+    assert_stdout <<~EOF
+      * Unmerged path g.txt
+      diff --git a/g.txt b/g.txt
+      index 00750ed..2603ab2 100644
+      --- a/g.txt
+      +++ b/g.txt
+      @@ -1,1 +1,5 @@
+      +<<<<<<< HEAD
+      +2
+      +=======
+       3
+      +>>>>>>> topic
+    EOF
   end
 end
 
@@ -402,6 +438,26 @@ class Command::TestMergeConflictedAddAddModeConflict < Command::TestMerge
 
     assert_stdout <<~EOF
       AA g.txt
+    EOF
+  end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout "* Unmerged path g.txt\n"
+  end
+
+  def test_report_mode_change_in_appropriate_diff
+    jit_cmd("diff", "-2")
+    assert_stdout <<~EOF
+      * Unmerged path g.txt
+    EOF
+
+    jit_cmd("diff", "-3")
+    assert_stdout <<~EOF
+      * Unmerged path g.txt
+      diff --git a/g.txt b/g.txt
+      old mode 100755
+      new mode 100644
     EOF
   end
 end
@@ -537,11 +593,11 @@ class Command::TestMergeConflictedEditEdit < Command::TestMerge
   def test_put_conflicted_file_in_workspace
     assert_workspace({
       "f.txt" => <<~EOF
-        <<<<<<<< HEAD
+        <<<<<<< HEAD
         2
-        ========
+        =======
         3
-        >>>>>>>> topic
+        >>>>>>> topic
       EOF
     })
   end
