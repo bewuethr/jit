@@ -352,6 +352,11 @@ class Command::TestMergeConflictedAddAdd < Command::TestMerge
       AA g.txt
     EOF
   end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout "* Unmerged path g.txt\n"
+  end
 end
 
 class Command::TestMergeConflictedAddAddModeConflict < Command::TestMerge
@@ -449,6 +454,11 @@ class Command::TestMergeConflictedFileDirectoryAddition < Command::TestMerge
       ?? g.txt~HEAD
     EOF
   end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout "* Unmerged path g.txt\n"
+  end
 end
 
 class Command::TestMergeConflictedDirectoryFileAddition < Command::TestMerge
@@ -497,6 +507,11 @@ class Command::TestMergeConflictedDirectoryFileAddition < Command::TestMerge
       UA g.txt
       ?? g.txt~topic
     EOF
+  end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout "* Unmerged path g.txt\n"
   end
 end
 
@@ -550,6 +565,11 @@ class Command::TestMergeConflictedEditEdit < Command::TestMerge
       UU f.txt
     EOF
   end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout "* Unmerged path f.txt\n"
+  end
 end
 
 class Command::TestMergeConflictedEditDelete < Command::TestMerge
@@ -592,6 +612,11 @@ class Command::TestMergeConflictedEditDelete < Command::TestMerge
       UD f.txt
     EOF
   end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout "* Unmerged path f.txt\n"
+  end
 end
 
 class Command::TestMergeConflictedDeleteEdit < Command::TestMerge
@@ -633,6 +658,11 @@ class Command::TestMergeConflictedDeleteEdit < Command::TestMerge
     assert_stdout <<~EOF
       DU f.txt
     EOF
+  end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout "* Unmerged path f.txt\n"
   end
 end
 
@@ -683,6 +713,14 @@ class Command::TestMergeConflictedEditAddParent < Command::TestMerge
       ?? nest~topic
     EOF
   end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout <<~EOF
+      * Unmerged path nest
+      * Unmerged path nest/f.txt
+    EOF
+  end
 end
 
 class Command::TestMergeConflictedEditAddChild < Command::TestMerge
@@ -731,6 +769,11 @@ class Command::TestMergeConflictedEditAddChild < Command::TestMerge
       A  nest/f.txt/g.txt
       ?? nest/f.txt~HEAD
     EOF
+  end
+
+  def test_list_file_as_unmerged_in_diff
+    jit_cmd("diff")
+    assert_stdout "* Unmerged path nest/f.txt\n"
   end
 end
 
