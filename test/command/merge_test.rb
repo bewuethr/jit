@@ -896,3 +896,88 @@ class Command::TestMergeMultipleCommonAncestors < Command::TestMerge
     assert_stdout("")
   end
 end
+
+class Command::TestMergeConflictResolution < Command::TestMerge
+  def setup
+    super
+
+    merge3(
+      {"f.txt" => "1\n"},
+      {"f.txt" => "2\n"},
+      {"f.txt" => "3\n"}
+    )
+  end
+
+  def test_prevent_commit_with_unmerged_entries
+    jit_cmd("commit")
+
+    assert_stderr <<~EOF
+      error: Committing is not possible because you have unmerged files.
+      hint: Fix them up in the work tree, and then use 'jit add <file>'
+      hint: as appropriate to mark resolution and make a commit.
+      fatal: Exiting because of an unresolved conflict.
+    EOF
+    assert_status(128)
+
+    assert_equal("B", load_commit("@").message)
+  end
+
+  def test_prevent_merge_continue_with_unmerged_entries
+    jit_cmd("merge", "--continue")
+
+    assert_stderr <<~EOF
+      error: Committing is not possible because you have unmerged files.
+      hint: Fix them up in the work tree, and then use 'jit add <file>'
+      hint: as appropriate to mark resolution and make a commit.
+      fatal: Exiting because of an unresolved conflict.
+    EOF
+    assert_status(128)
+
+    assert_equal("B", load_commit("@").message)
+  end
+
+  def test_commit_merge_after_resolving_conflicts
+    jit_cmd("add", "f.txt")
+    jit_cmd("commit")
+    assert_status(0)
+
+    commit = load_commit("@")
+    assert_equal("M", commit.message)
+
+    parents = commit.parents.map { |oid| load_commit(oid).message }
+    assert_equal(["B", "C"], parents)
+  end
+
+  def test_allow_merge_continue_after_resolving_conflicts
+    jit_cmd("add", "f.txt")
+    jit_cmd("merge", "--continue")
+    assert_status(0)
+
+    commit = load_commit("@")
+    assert_equal("M", commit.message)
+
+    parents = commit.parents.map { |oid| load_commit(oid).message }
+    assert_equal(["B", "C"], parents)
+  end
+
+  def test_prevent_merge_continue_when_none_is_in_progress
+    jit_cmd("add", "f.txt")
+    jit_cmd("merge", "--continue")
+    jit_cmd("merge", "--continue")
+
+    assert_stderr("fatal: There is no merge in progress (MERGE_HEAD missing).\n")
+    assert_status(128)
+  end
+
+  def test_prevent_starting_merge_while_one_in_progress
+    jit_cmd("merge")
+
+    assert_stderr <<~EOF
+      error: Merging is not possible because you have unmerged files.
+      hint: Fix them up in the work tree, and then use 'jit add <file>'
+      hint: as appropriate to mark resolution and make a commit.
+      fatal: Exiting because of an unresolved conflict.
+    EOF
+    assert_status(128)
+  end
+end
