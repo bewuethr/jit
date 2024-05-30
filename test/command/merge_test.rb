@@ -220,6 +220,26 @@ class Command::TestMergeUnconflictedSameEdit < Command::TestMerge
   end
 end
 
+class Command::TestMergeUnconflictedInFileMergePossible < Command::TestMerge
+  def setup
+    super
+
+    merge3(
+      {"f.txt" => "1\n2\n3\n"},
+      {"f.txt" => "4\n2\n3\n"},
+      {"f.txt" => "1\n2\n5\n"}
+    )
+  end
+
+  def test_put_combined_changes_in_workspace
+    assert_workspace({"f.txt" => "4\n2\n5\n"})
+  end
+
+  def test_create_clean_merge
+    assert_clean_merge
+  end
+end
+
 class Command::TestMergeUnconflictedEditAndModeChange < Command::TestMerge
   def setup
     super
