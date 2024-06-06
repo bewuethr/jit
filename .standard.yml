@@ -1,6 +1,8 @@
-ruby_version: 3.2.2
+ruby_version: 3.3.1
 ignore:
   - test/command/checkout_test.rb:
       - Style/RedundantStringEscape
   - test/command/status_test.rb:
       - Style/RedundantStringEscape
+  - lib/diff/hunk.rb:
+      - Lint/FormatParameterMismatch
