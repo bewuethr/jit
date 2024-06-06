@@ -14,6 +14,8 @@ module Diff
       line = a_line || b_line
       SYMBOLS.fetch(type) + line.text
     end
+
+    def a_lines = [a_line]
   end
 
   Line = Struct.new(:number, :text)
@@ -26,6 +28,10 @@ module Diff
   def self.diff(a, b) = Myers.diff(Diff.lines(a), Diff.lines(b))
 
   def self.diff_hunks(a, b) = Hunk.filter(Diff.diff(a, b))
+
+  def self.combined_hunks(as, b)
+    Hunk.filter(Diff.combined(as, b))
+  end
 
   def self.combined(as, b)
     diffs = as.map { |a| Diff.diff(a, b) }

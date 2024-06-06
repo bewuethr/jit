@@ -11,6 +11,17 @@ module Diff
 
         symbols.join("") + line.text
       end
+
+      def type
+        types = edits.compact.map(&:type)
+        types.include?(:ins) ? :ins : types.first
+      end
+
+      def a_lines
+        edits.map { |edit| edit&.a_line }
+      end
+
+      def b_line = edits.first&.b_line
     end
 
     def initialize(diffs)
