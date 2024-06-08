@@ -327,14 +327,26 @@ class Command::TestLogGraphOfCommits < Command::TestLog
     time = Time.now
 
     commit_tree("A", {"f.txt" => "0", "g.txt" => "0"}, time)
-    commit_tree("B", {"f.txt" => "B"}, time)
+    commit_tree("B", {"f.txt" => "B", "h.txt" => <<~EOF}, time)
+      one
+      two
+      three
+    EOF
 
-    ("C".."D").each { |n| commit_tree(n, {"f.txt" => n}, time + 1) }
+    ("C".."D").each { |n| commit_tree(n, {"f.txt" => n, "h.txt" => <<~EOF}, time + 1) }
+      #{n}
+      two
+      three
+    EOF
 
     jit_cmd("branch", "topic", "main~2")
     jit_cmd("checkout", "topic")
 
-    ("E".."H").each { |n| commit_tree(n, {"g.txt" => n}, time + 2) }
+    ("E".."H").each { |n| commit_tree(n, {"g.txt" => n, "h.txt" => <<~EOF}, time + 2) }
+      one
+      two
+      #{n}
+    EOF
 
     jit_cmd("checkout", "main")
     set_stdin("J")
@@ -375,6 +387,26 @@ class Command::TestLogGraphOfCommitsNoUndone < Command::TestLogGraphOfCommits
     EOF
   end
 
+  def test_log_second_parent_of_merge
+    jit_cmd("log", "--pretty=oneline", "main^^2")
+
+    assert_stdout <<~EOF
+      #{@topic[1]} G
+      #{@topic[2]} F
+      #{@topic[3]} E
+      #{@main[4]} B
+      #{@main[5]} A
+    EOF
+  end
+
+  def test_log_unmerged_commits_on_branch
+    jit_cmd("log", "--pretty=oneline", "main..topic")
+
+    assert_stdout <<~EOF
+      #{@topic[0]} H
+    EOF
+  end
+
   def test_no_patches_for_merge_commits
     jit_cmd("log", "--pretty=oneline", "--patch", "topic..main", "^main^^^")
 
@@ -396,6 +428,58 @@ class Command::TestLogGraphOfCommitsNoUndone < Command::TestLogGraphOfCommits
       @@ -1,1 +1,1 @@
       -C
       +D
+      diff --git a/h.txt b/h.txt
+      index 4e5ce14..4139691 100644
+      --- a/h.txt
+      +++ b/h.txt
+      @@ -1,3 +1,3 @@
+      -C
+      +D
+       two
+       three
+    EOF
+  end
+
+  def test_show_combined_patches_for_merges
+    jit_cmd("log", "--pretty=oneline", "--cc", "topic..main", "^main^^^")
+
+    assert_stdout <<~EOF
+      #{@main[0]} K
+      diff --git a/f.txt b/f.txt
+      index 02358d2..449e49e 100644
+      --- a/f.txt
+      +++ b/f.txt
+      @@ -1,1 +1,1 @@
+      -D
+      +K
+      #{@main[1]} J
+      diff --cc h.txt
+      index 4139691,f3e97ee..4e78f4f
+      --- a/h.txt
+      +++ b/h.txt
+      @@@ -1,3 -1,3 +1,3 @@@
+       -one
+       +D
+        two
+      - three
+      + G
+      #{@main[2]} D
+      diff --git a/f.txt b/f.txt
+      index 96d80cd..02358d2 100644
+      --- a/f.txt
+      +++ b/f.txt
+      @@ -1,1 +1,1 @@
+      -C
+      +D
+      diff --git a/h.txt b/h.txt
+      index 4e5ce14..4139691 100644
+      --- a/h.txt
+      +++ b/h.txt
+      @@ -1,3 +1,3 @@
+      -C
+      +D
+       two
+       three
     EOF
   end
 

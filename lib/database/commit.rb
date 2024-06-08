@@ -51,5 +51,7 @@ class Database
     def title_line = @message.lines.first
 
     def date = @author.time
+
+    def merge? = @parents.size > 1
   end
 end
