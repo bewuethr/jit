@@ -25,7 +25,7 @@ module Diff
     end
 
     def initialize(diffs)
-      @difs = diffs
+      @diffs = diffs
     end
 
     def each
@@ -39,7 +39,7 @@ module Diff
         return if complete?
 
         edits = offset_diffs.map { |offset, diff| diff[offset] }
-        @offset.map! { |offset| offset + 1 }
+        @offsets.map! { |offset| offset + 1 }
 
         yield Row.new(edits)
       end

@@ -373,9 +373,21 @@ class Command::TestMergeConflictedAddAdd < Command::TestMerge
     EOF
   end
 
-  def test_list_file_as_unmerged_in_diff
+  def test_show_combined_diff_against_stages_2_and_3
     jit_cmd("diff")
-    assert_stdout "* Unmerged path g.txt\n"
+
+    assert_stdout <<~EOF
+      diff --cc g.txt
+      index 0cfbf08,00750ed..2603ab2
+      --- a/g.txt
+      +++ b/g.txt
+      @@@ -1,1 -1,1 +1,5 @@@
+      ++<<<<<<< HEAD
+       +2
+      ++=======
+      + 3
+      ++>>>>>>> topic
+    EOF
   end
 
   def test_show_diff_against_our_version
@@ -461,9 +473,16 @@ class Command::TestMergeConflictedAddAddModeConflict < Command::TestMerge
     EOF
   end
 
-  def test_list_file_as_unmerged_in_diff
+  def test_show_combined_diff_against_stages_2_and_3
     jit_cmd("diff")
-    assert_stdout "* Unmerged path g.txt\n"
+
+    assert_stdout <<~EOF
+      diff --cc g.txt
+      index d8263ee,d8263ee..d8263ee
+      mode 100644,100755..100644
+      --- a/g.txt
+      +++ b/g.txt
+    EOF
   end
 
   def test_report_mode_change_in_appropriate_diff
@@ -642,9 +661,21 @@ class Command::TestMergeConflictedEditEdit < Command::TestMerge
     EOF
   end
 
-  def test_list_file_as_unmerged_in_diff
+  def test_show_combined_diff_against_stages_2_and_3
     jit_cmd("diff")
-    assert_stdout "* Unmerged path f.txt\n"
+
+    assert_stdout <<~EOF
+      diff --cc f.txt
+      index 0cfbf08,00750ed..2603ab2
+      --- a/f.txt
+      +++ b/f.txt
+      @@@ -1,1 -1,1 +1,5 @@@
+      ++<<<<<<< HEAD
+       +2
+      ++=======
+      + 3
+      ++>>>>>>> topic
+    EOF
   end
 end
 
