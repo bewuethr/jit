@@ -44,6 +44,12 @@ class Command::TestRmWithSingleFile < Command::TestRm
     refute(repo.index.tracked_file?("f.txt"))
   end
 
+  def test_fila_if_file_not_in_index
+    jit_cmd("rm", "nope.txt")
+    assert_status(128)
+    assert_stderr("fatal: pathspec 'nope.txt' did not match any files\n")
+  end
+
   def test_fail_if_file_has_unstaged_changes
     sleep 0.01
     write_file("f.txt", "2")
