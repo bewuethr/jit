@@ -74,6 +74,11 @@ class Workspace
     end
   end
 
+  def remove(path)
+    File.unlink(@pathname.join(path))
+  rescue Errno::ENOENT
+  end
+
   def remove_directory(dirname)
     Dir.rmdir(@pathname.join(dirname))
   rescue Errno::ENOENT, Errno::ENOTDIR, Errno::ENOTEMPTY
