@@ -12,6 +12,7 @@ module Command
     def define_options
       @parser.on("--cached") { @options[:cached] = true }
       @parser.on("-f", "--force") { @options[:force] = true }
+      @parser.on("-r") { @options[:recursive] = true }
     end
 
     def run
@@ -23,7 +24,10 @@ module Command
       @unstaged = []
       @both_changed = []
 
-      @args.each { |path| plan_removal(Pathname.new(path)) }
+      @args = @args.flat_map { |path| expand_path(path) }
+        .map { |path| Pathname.new(path) }
+
+      @args.each { |path| plan_removal(path) }
       exit_on_errors
 
       @args.each { |path| remove_file(path) }
@@ -36,11 +40,17 @@ module Command
       exit 128
     end
 
-    private def plan_removal(path)
-      unless repo.index.tracked_file?(path)
-        raise "pathspec '#{path}' did not match any files"
+    private def expand_path(path)
+      if repo.index.tracked_directory?(path)
+        return repo.index.child_paths(path) if @options[:recursive]
+        raise "not removing '#{path}' recursively without -r"
       end
 
+      return [path] if repo.index.tracked_file?(path)
+      raise "pathspec '#{path}' did not match any files"
+    end
+
+    private def plan_removal(path)
       return if @options[:force]
 
       stat = repo.workspace.stat_file(path)

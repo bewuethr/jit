@@ -4,7 +4,9 @@ require_relative "../command_helper"
 
 class Command::TestRm < Minitest::Test
   include CommandHelper
+end
 
+class Command::TestRmWithSingleFile < Command::TestRm
   def setup
     super
 
@@ -13,9 +15,7 @@ class Command::TestRm < Minitest::Test
     jit_cmd("add", ".")
     commit("first")
   end
-end
 
-class Command::TestRmWithSingleFile < Command::TestRm
   def test_exit_successfully
     jit_cmd("rm", "f.txt")
     assert_status(0)
@@ -148,5 +148,62 @@ class Command::TestRmWithSingleFile < Command::TestRm
     repo.index.load
     assert(repo.index.tracked_file?("f.txt"))
     assert_workspace("f.txt" => "3")
+  end
+end
+
+class Command::TestRmWithTree < Command::TestRm
+  def setup
+    super
+
+    write_file("f.txt", "1")
+    write_file("outer/g.txt", "2")
+    write_file("outer/inner/h.txt", "3")
+
+    jit_cmd("add", ".")
+    commit("first")
+  end
+
+  def test_remove_multiple_files
+    jit_cmd("rm", "f.txt", "outer/inner/h.txt")
+
+    repo.index.load
+    assert_equal(["outer/g.txt"], repo.index.each_entry.map(&:path))
+    assert_workspace("outer/g.txt" => "2")
+  end
+
+  def test_refuse_to_remove_directory
+    jit_cmd("rm", "f.txt", "outer")
+
+    assert_stderr("fatal: not removing 'outer' recursively without -r\n")
+    assert_status(128)
+
+    repo.index.load
+    assert_equal(["f.txt", "outer/g.txt", "outer/inner/h.txt"],
+      repo.index.each_entry.map(&:path))
+    assert_workspace({
+      "f.txt" => "1",
+      "outer/g.txt" => "2",
+      "outer/inner/h.txt" => "3"
+    })
+  end
+
+  def test_remove_directory_with_recursive_flag
+    jit_cmd("rm", "-r", "outer")
+
+    repo.index.load
+    assert_equal(["f.txt"], repo.index.each_entry.map(&:path))
+    assert_workspace("f.txt" => "1")
+  end
+
+  def test_do_not_remove_untracked_files
+    write_file("outer/inner/j.txt", "4")
+    jit_cmd("rm", "-r", "outer")
+
+    repo.index.load
+    assert_equal(["f.txt"], repo.index.each_entry.map(&:path))
+    assert_workspace({
+      "f.txt" => "1",
+      "outer/inner/j.txt" => "4"
+    })
   end
 end

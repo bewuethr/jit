@@ -76,6 +76,7 @@ class Workspace
 
   def remove(path)
     File.unlink(@pathname.join(path))
+    path.dirname.ascend { |dirname| remove_directory(dirname) }
   rescue Errno::ENOENT
   end
 

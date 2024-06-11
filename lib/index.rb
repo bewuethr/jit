@@ -177,9 +177,13 @@ class Index
 
   def release_lock = @lockfile.rollback
 
+  def child_paths(path) = @parents[path.to_s].to_a
+
+  def tracked?(path) = tracked_file?(path) || tracked_directory?(path)
+
   def tracked_file?(path)
     (0..3).any? { |stage| @entries.has_key?([path.to_s, stage]) }
   end
 
-  def tracked?(path) = tracked_file?(path) || @parents.has_key?(path.to_s)
+  def tracked_directory?(path) = @parents.has_key?(path.to_s)
 end
