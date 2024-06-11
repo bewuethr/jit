@@ -5,6 +5,15 @@ require_relative "../repository/inspector"
 
 module Command
   class Rm < Base
+    BOTH_CHANGED = "staged content different from both the file and the HEAD"
+    INDEX_CHANGED = "changes staged in the index"
+    WORKSPACE_CHANGED = "local modifications"
+
+    def define_options
+      @parser.on("--cached") { @options[:cached] = true }
+      @parser.on("-f", "--force") { @options[:force] = true }
+    end
+
     def run
       repo.index.load_for_update
 
@@ -12,6 +21,7 @@ module Command
       @inspector = Repository::Inspector.new(repo)
       @uncommitted = []
       @unstaged = []
+      @both_changed = []
 
       @args.each { |path| plan_removal(Pathname.new(path)) }
       exit_on_errors
@@ -31,22 +41,32 @@ module Command
         raise "pathspec '#{path}' did not match any files"
       end
 
+      return if @options[:force]
+
+      stat = repo.workspace.stat_file(path)
+      raise "jit rm: '#{path}': Operation not permitted" if stat&.directory?
+
       item = repo.database.load_tree_entry(@head_oid, path)
       entry = repo.index.entry_for_path(path)
-      stat = repo.workspace.stat_file(path)
 
-      if @inspector.compare_tree_to_index(item, entry)
-        @uncommitted.push(path)
-      elsif stat && @inspector.compare_index_to_workspace(entry, stat)
-        @unstaged.push(path)
+      staged_change = @inspector.compare_tree_to_index(item, entry)
+      unstaged_change = @inspector.compare_index_to_workspace(entry, stat) if stat
+
+      if staged_change && unstaged_change
+        @both_changed.push(path)
+      elsif staged_change
+        @uncommitted.push(path) unless @options[:cached]
+      elsif unstaged_change
+        @unstaged.push(path) unless @options[:cached]
       end
     end
 
     private def exit_on_errors
-      return if @uncommitted.empty? && @unstaged.empty?
+      return if [@both_changed, @uncommitted, @unstaged].all?(&:empty?)
 
-      print_errors(@uncommitted, "changes staged in the index")
-      print_errors(@unstaged, "local modifications")
+      print_errors(@both_changed, BOTH_CHANGED)
+      print_errors(@uncommitted, INDEX_CHANGED)
+      print_errors(@unstaged, WORKSPACE_CHANGED)
 
       repo.index.release_lock
       exit 1
@@ -54,7 +74,7 @@ module Command
 
     private def remove_file(path)
       repo.index.remove(path)
-      repo.workspace.remove(path)
+      repo.workspace.remove(path) unless @options[:cached]
       puts "rm '#{path}'"
     end
 
