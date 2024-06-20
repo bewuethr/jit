@@ -192,4 +192,25 @@ class Command::TestResetWithHeadCommit < Command::TestReset
 
     assert_unchanged_workspace
   end
+
+  def test_rest_index_and_workspace
+    write_file("a.txt/nested", "remove me")
+    write_file("outer/b.txt", "10")
+    delete("outer/inner")
+
+    jit_cmd("reset", "--hard")
+    assert_unchanged_head
+
+    assert_index({
+      "a.txt" => "1",
+      "outer/b.txt" => "4",
+      "outer/inner/c.txt" => "3"
+    })
+
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      ?? outer/e.txt
+    EOF
+  end
 end
