@@ -16,6 +16,11 @@ class Index
     clear
   end
 
+  def clear!
+    clear
+    @changed = true
+  end
+
   def clear
     @entries = {}
     @keys = SortedSet.new
