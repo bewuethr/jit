@@ -1,4 +1,5 @@
 require "digest/sha1"
+require "pathname"
 require "strscan"
 require "zlib"
 
@@ -66,6 +67,16 @@ class Database
     end
   end
 
+  def load_tree_list(oid, pathname = nil)
+    return {} unless oid
+
+    entry = load_tree_entry(oid, pathname)
+    list = {}
+
+    build_list(list, entry, pathname || Pathname.new(""))
+    list
+  end
+
   private def serialize_object(object)
     string = object.to_s.force_encoding(Encoding::ASCII_8BIT)
     "#{object.type} #{string.bytesize}\0#{string}"
@@ -112,5 +123,14 @@ class Database
     object.oid = oid
 
     object
+  end
+
+  private def build_list(list, entry, prefix)
+    return unless entry
+    return list[prefix.to_s] = entry unless entry.tree?
+
+    load(entry.oid).entries.each do |name, item|
+      build_list(list, item, prefix.join(name))
+    end
   end
 end

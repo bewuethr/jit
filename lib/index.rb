@@ -186,4 +186,9 @@ class Index
   end
 
   def tracked_directory?(path) = @parents.has_key?(path.to_s)
+
+  def add_from_db(pathname, item)
+    store_entry(Entry.create_from_db(pathname, item, 0))
+    @changed = true
+  end
 end
