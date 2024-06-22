@@ -1020,6 +1020,20 @@ class Command::TestMergeConflictResolution < Command::TestMerge
     assert_status(128)
   end
 
+  def test_abort_merge
+    jit_cmd("merge", "--abort")
+    jit_cmd("status", "--porcelain")
+    assert_stdout("")
+  end
+
+  def test_prevent_aborting_when_no_merge_in_progress
+    jit_cmd("merge", "--abort")
+    jit_cmd("merge", "--abort")
+
+    assert_stderr("fatal: There is no merge to abort (MERGE_HEAD missing).\n")
+    assert_status(128)
+  end
+
   def test_prevent_starting_merge_while_one_in_progress
     jit_cmd("merge")
 

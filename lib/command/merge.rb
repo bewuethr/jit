@@ -12,10 +12,13 @@ module Command
 
     def define_options
       @options[:mode] = :run
+
+      @parser.on("--abort") { @options[:mode] = :abort }
       @parser.on("--continue") { @options[:mode] = :continue }
     end
 
     def run
+      handle_abort if @options[:mode] == :abort
       handle_continue if @options[:mode] == :continue
       handle_in_progress_merge if pending_commit.in_progress?
 
@@ -28,6 +31,19 @@ module Command
       commit_merge
 
       exit 0
+    end
+
+    private def handle_abort
+      repo.pending_commit.clear
+
+      repo.index.load_for_update
+      repo.hard_reset(repo.refs.read_head)
+      repo.index.write_updates
+
+      exit 0
+    rescue Repository::PendingCommit::Error => error
+      @stderr.puts "fatal: #{error.message}"
+      exit 128
     end
 
     private def handle_continue

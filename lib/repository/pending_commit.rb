@@ -13,9 +13,12 @@ class Repository
       File.open(@message_path, flags) { |f| f.write(message) }
     end
 
-    def clear
+    def clear(type = :merge)
       File.unlink(@head_path)
       File.unlink(@message_path)
+    rescue Errno::ENOENT
+      name = @head_path.basename
+      raise Error, "There is no merge to abort (#{name} missing)."
     end
 
     def in_progress? = File.file?(@head_path)
