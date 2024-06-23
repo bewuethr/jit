@@ -17,6 +17,16 @@ module Command
       commit
     end
 
+    def print_commit(commit)
+      ref = repo.refs.current_ref
+      info = ref.head? ? "detached HEAD" : ref.short_name
+      oid = repo.database.short_oid(commit.oid)
+      info.concat(" (root-commit)") unless commit.parent
+      info.concat(oid.to_s)
+
+      puts "[#{info}] #{commit.title_line}"
+    end
+
     def write_tree
       root = Database::Tree.build(repo.index.each_entry)
       root.traverse { |tree| repo.database.store(tree) }
