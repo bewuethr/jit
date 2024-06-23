@@ -36,8 +36,7 @@ class Command::TestMerge < Minitest::Test
     commit_tree("C", right)
 
     jit_cmd("checkout", "main")
-    set_stdin("M")
-    jit_cmd("merge", "topic")
+    jit_cmd("merge", "topic", "-m", "M")
   end
 
   def assert_clean_merge
@@ -48,13 +47,13 @@ class Command::TestMerge < Minitest::Test
     old_head = load_commit("@^")
     merge_head = load_commit("topic")
 
-    assert_equal("M", commit.message)
+    assert_equal("M", commit.message.strip)
     assert_equal([old_head.oid, merge_head.oid], commit.parents)
   end
 
   def assert_no_merge
     commit = load_commit("@")
-    assert_equal("B", commit.message)
+    assert_equal("B", commit.message.strip)
     assert_equal(1, commit.parents.size)
   end
 
@@ -82,7 +81,7 @@ class Command::TestMergeAncestor < Command::TestMerge
 
   def test_does_not_change_repo_state
     commit = load_commit("@")
-    assert_equal("C", commit.message)
+    assert_equal("C", commit.message.strip)
 
     jit_cmd("status", "--porcelain")
     assert_stdout("")
@@ -100,8 +99,7 @@ class Command::TestFastForwardMerge < Command::TestMerge
     jit_cmd("branch", "topic", "@^^")
     jit_cmd("checkout", "topic")
 
-    set_stdin("M")
-    jit_cmd("merge", "main")
+    jit_cmd("merge", "main", "-m", "M")
   end
 
   def test_print_fast_forward_message
@@ -114,7 +112,7 @@ class Command::TestFastForwardMerge < Command::TestMerge
 
   def test_update_current_branch_head
     commit = load_commit("@")
-    assert_equal("C", commit.message)
+    assert_equal("C", commit.message.strip)
 
     jit_cmd("status", "--porcelain")
     assert_stdout("")
@@ -913,8 +911,7 @@ class Command::TestMergeMultipleCommonAncestors < Command::TestMerge
   end
 
   def test_perform_first_merge
-    set_stdin("merge joiner")
-    jit_cmd("merge", "joiner")
+    jit_cmd("merge", "joiner", "-m", "merge joiner")
     assert_status(0)
 
     assert_workspace({
@@ -928,13 +925,11 @@ class Command::TestMergeMultipleCommonAncestors < Command::TestMerge
   end
 
   def test_perform_second_merge
-    set_stdin("merge joiner")
-    jit_cmd("merge", "joiner")
+    jit_cmd("merge", "joiner", "-m", "merge joiner")
 
     commit_tree("H", "f.txt" => "4")
 
-    set_stdin("merge topic")
-    jit_cmd("merge", "topic")
+    jit_cmd("merge", "topic", "-m", "merge topic")
     assert_status(0)
 
     assert_workspace({
@@ -970,7 +965,7 @@ class Command::TestMergeConflictResolution < Command::TestMerge
     EOF
     assert_status(128)
 
-    assert_equal("B", load_commit("@").message)
+    assert_equal("B", load_commit("@").message.strip)
   end
 
   def test_prevent_merge_continue_with_unmerged_entries
@@ -984,7 +979,7 @@ class Command::TestMergeConflictResolution < Command::TestMerge
     EOF
     assert_status(128)
 
-    assert_equal("B", load_commit("@").message)
+    assert_equal("B", load_commit("@").message.strip)
   end
 
   def test_commit_merge_after_resolving_conflicts
@@ -993,9 +988,9 @@ class Command::TestMergeConflictResolution < Command::TestMerge
     assert_status(0)
 
     commit = load_commit("@")
-    assert_equal("M", commit.message)
+    assert_equal("M", commit.message.strip)
 
-    parents = commit.parents.map { |oid| load_commit(oid).message }
+    parents = commit.parents.map { |oid| load_commit(oid).message.strip }
     assert_equal(["B", "C"], parents)
   end
 
@@ -1005,9 +1000,9 @@ class Command::TestMergeConflictResolution < Command::TestMerge
     assert_status(0)
 
     commit = load_commit("@")
-    assert_equal("M", commit.message)
+    assert_equal("M", commit.message.strip)
 
-    parents = commit.parents.map { |oid| load_commit(oid).message }
+    parents = commit.parents.map { |oid| load_commit(oid).message.strip }
     assert_equal(["B", "C"], parents)
   end
 

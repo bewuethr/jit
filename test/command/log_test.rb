@@ -349,8 +349,7 @@ class Command::TestLogGraphOfCommits < Command::TestLog
     EOF
 
     jit_cmd("checkout", "main")
-    set_stdin("J")
-    jit_cmd("merge", "topic^")
+    jit_cmd("merge", "topic^", "-m", "J")
 
     commit_tree("K", {"f.txt" => "K"}, time + 3)
 
@@ -507,8 +506,7 @@ class Command::TestLogGraphOfCommitsWithUndone < Command::TestLogGraphOfCommits
 
     %w[C 0].each { |n| commit_tree(n, {"g.txt" => n}, time + 1) }
 
-    set_stdin("J")
-    jit_cmd("merge", "topic^")
+    jit_cmd("merge", "topic^", "-m", "J")
 
     commit_tree("K", {"f.txt" => "K"}, time + 3)
   end

@@ -7,12 +7,14 @@ module Command
   class Commit < Base
     include WriteCommit
 
+    def define_options = define_write_commit_options
+
     def run
       repo.index.load
       resume_merge if pending_commit.in_progress?
 
       parent = repo.refs.read_head
-      message = @stdin.read
+      message = read_message
       commit = write_commit([*parent], message)
 
       print_commit(commit)
