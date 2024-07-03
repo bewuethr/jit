@@ -196,4 +196,10 @@ class Index
     store_entry(Entry.create_from_db(pathname, item, 0))
     @changed = true
   end
+
+  def conflict_paths
+    paths = Set.new
+    each_entry { paths.add(_1.path) unless _1.stage == 0 }
+    paths
+  end
 end

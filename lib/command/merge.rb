@@ -10,6 +10,14 @@ module Command
   class Merge < Base
     include WriteCommit
 
+    COMMIT_NOTES = <<~EOF
+      Please enter a commit message to explain why this merge is necessary,
+      especially if it merges an updated upstream into a topic branch.
+
+      Lines starting with '#' will be ignored, and an empty message aborts
+      the commit.
+    EOF
+
     def define_options
       define_write_commit_options
 
@@ -28,7 +36,7 @@ module Command
       handle_merged_ancestor if @inputs.already_merged?
       handle_fast_forward if @inputs.fast_forward?
 
-      pending_commit.start(@inputs.right_oid, read_message)
+      pending_commit.start(@inputs.right_oid)
       resolve_merge
       commit_merge
 
@@ -94,20 +102,41 @@ module Command
       merge.execute
 
       repo.index.write_updates
-
-      if repo.index.conflict?
-        puts "Automatic merge failed; fix conflicts and then commit the result."
-        exit 1
-      end
+      fail_on_conflict if repo.index.conflict?
     end
+
+    private def fail_on_conflict
+      edit_file(pending_commit.message_path) do |editor|
+        editor.puts(read_message || default_commit_message)
+        editor.puts("")
+        editor.note("Conflicts:")
+        repo.index.conflict_paths.each { editor.note("\t#{_1}") }
+        editor.close
+      end
+
+      puts "Automatic merge failed; fix conflicts and then commit the result."
+      exit 1
+    end
+
+    private def default_commit_message = "Merge commit '#{@inputs.right_name}'"
 
     private def commit_merge
       parents = [@inputs.left_oid, @inputs.right_oid]
-      message = pending_commit.merge_message
+      message = compose_message
 
       write_commit(parents, message)
 
       pending_commit.clear
+    end
+
+    private def compose_message
+      edit_file(pending_commit.message_path) do |editor|
+        editor.puts(read_message || default_commit_message)
+        editor.puts("")
+        editor.note(COMMIT_NOTES)
+
+        editor.close unless @options[:edit]
+      end
     end
   end
 end

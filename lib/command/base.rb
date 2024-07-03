@@ -2,6 +2,7 @@ require "optparse"
 require "pathname"
 
 require_relative "../color"
+require_relative "../editor"
 require_relative "../pager"
 require_relative "../repository"
 
@@ -65,6 +66,17 @@ module Command
     end
 
     def define_options
+    end
+
+    def edit_file(path)
+      Editor.edit(path, editor_command) do |editor|
+        yield editor
+        editor.close unless @isatty
+      end
+    end
+
+    def editor_command
+      @env["GIT_EDITOR"] || @env["VISUAL"] || @env["EDITOR"]
     end
   end
 end
