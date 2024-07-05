@@ -4,7 +4,9 @@ require_relative "../command_helper"
 
 class Command::TestCommit < Minitest::Test
   include CommandHelper
+end
 
+class Command::TestCommitToBranches < Command::TestCommit
   def commit_change(content)
     write_file("file.txt", content)
     jit_cmd("add", ".")
@@ -23,7 +25,11 @@ class Command::TestCommit < Minitest::Test
   end
 end
 
-class Command::TestCommitOnBranch < Command::TestCommit
+class Command::TestCommitOnBranch < Command::TestCommitToBranches
+  def setup
+    super
+  end
+
   def test_advance_branch_pointer
     head_before = repo.refs.read_ref("HEAD")
 
@@ -39,7 +45,7 @@ class Command::TestCommitOnBranch < Command::TestCommit
   end
 end
 
-class Command::TestCommitWithDetachedHead < Command::TestCommit
+class Command::TestCommitWithDetachedHead < Command::TestCommitToBranches
   def setup
     super
 
@@ -69,7 +75,7 @@ class Command::TestCommitWithDetachedHead < Command::TestCommit
   end
 end
 
-class Command::TestCommitWithConcurrentBranches < Command::TestCommit
+class Command::TestCommitWithConcurrentBranches < Command::TestCommitToBranches
   def setup
     super
 
@@ -85,5 +91,24 @@ class Command::TestCommitWithConcurrentBranches < Command::TestCommit
 
     refute_equal(resolve_revision("topic"), resolve_revision("fork"))
     assert_equal(resolve_revision("topic~3"), resolve_revision("fork^"))
+  end
+end
+
+class Command::TestCommitReusingMessages < Command::TestCommit
+  def setup
+    super
+
+    write_file("file.txt", "1")
+    jit_cmd("add", ".")
+    commit("first")
+  end
+
+  def test_use_message_from_another_commit
+    write_file("file.txt", "2")
+    jit_cmd("add", ".")
+    jit_cmd("commit", "-C", "@")
+
+    revs = RevList.new(repo, ["HEAD"])
+    assert_equal(["first", "first"], revs.map { _1.message.strip })
   end
 end
