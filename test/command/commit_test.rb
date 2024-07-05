@@ -2,6 +2,8 @@ require "minitest/autorun"
 
 require_relative "../command_helper"
 
+require "rev_list"
+
 class Command::TestCommit < Minitest::Test
   include CommandHelper
 end
@@ -110,5 +112,36 @@ class Command::TestCommitReusingMessages < Command::TestCommit
 
     revs = RevList.new(repo, ["HEAD"])
     assert_equal(["first", "first"], revs.map { _1.message.strip })
+  end
+end
+
+class Command::TestCommitAmending < Command::TestCommit
+  def setup
+    super
+
+    ["first", "second", "third"].each do |message|
+      write_file("file.txt", message)
+      jit_cmd("add", ".")
+      commit(message)
+    end
+  end
+
+  def test_replace_last_commit_message
+    stub_editor("third [amended]\n") { jit_cmd("commit", "--amend") }
+    revs = RevList.new(repo, ["HEAD"])
+
+    assert_equal(["third [amended]", "second", "first"],
+      revs.map { _1.message.strip })
+  end
+
+  def test_replace_last_commit_tree
+    write_file("another.txt", "1")
+    jit_cmd("add", "another.txt")
+    jit_cmd("commit", "--amend")
+
+    commit = load_commit("HEAD")
+    diff = repo.database.tree_diff(commit.parent, commit.oid)
+
+    assert_equal(["another.txt", "file.txt"], diff.keys.map(&:to_s).sort)
   end
 end
