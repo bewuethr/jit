@@ -44,10 +44,8 @@ module Command
       end
 
       tree = write_tree
-      name = @env.fetch("GIT_AUTHOR_NAME")
-      email = @env.fetch("GIT_AUTHOR_EMAIL")
-      author = Database::Author.new(name, email, Time.now)
-      commit = Database::Commit.new(parents, tree.oid, author, message)
+      author = current_author
+      commit = Database::Commit.new(parents, tree.oid, author, author, message)
       repo.database.store(commit)
       repo.refs.update_head(commit.oid)
 
@@ -104,5 +102,12 @@ module Command
     end
 
     def commit_message_path = repo.git_path.join("COMMIT_EDITMSG")
+
+    def current_author
+      name = @env.fetch("GIT_AUTHOR_NAME")
+      email = @env.fetch("GIT_AUTHOR_EMAIL")
+
+      Database::Author.new(name, email, Time.now)
+    end
   end
 end
