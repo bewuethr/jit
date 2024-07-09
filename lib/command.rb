@@ -1,6 +1,7 @@
 require_relative "command/add"
 require_relative "command/branch"
 require_relative "command/checkout"
+require_relative "command/cherry_pick"
 require_relative "command/commit"
 require_relative "command/diff"
 require_relative "command/init"
@@ -17,6 +18,7 @@ module Command
     "add" => Add,
     "branch" => Branch,
     "checkout" => Checkout,
+    "cherry-pick" => CherryPick,
     "commit" => Commit,
     "diff" => Diff,
     "init" => Init,

@@ -4,17 +4,6 @@ require_relative "../command_helper"
 
 class Command::TestReset < Minitest::Test
   include CommandHelper
-
-  def assert_index(contents)
-    files = {}
-    repo.index.load
-
-    repo.index.each_entry do |entry|
-      files[entry.path] = repo.database.load(entry.oid).data
-    end
-
-    assert_equal(contents, files)
-  end
 end
 
 class Command::TestResetNoHeadCommit < Command::TestReset

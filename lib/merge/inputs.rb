@@ -3,7 +3,8 @@ require_relative "../revision"
 
 module Merge
   class Inputs
-    attr_reader :left_name, :right_name, :left_oid, :right_oid, :base_oids
+    ATTRS = [:left_name, :right_name, :left_oid, :right_oid, :base_oids]
+    attr_reader(*ATTRS)
 
     def initialize(repository, left_name, right_name)
       @repo = repository
@@ -25,4 +26,6 @@ module Merge
       Revision.new(@repo, rev).resolve(Revision::COMMIT)
     end
   end
+
+  CherryPick = Struct.new(*Inputs::ATTRS)
 end

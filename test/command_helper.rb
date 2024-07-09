@@ -87,6 +87,17 @@ module CommandHelper
 
   def resolve_revision(expression) = Revision.new(repo, expression).resolve
 
+  def assert_index(contents)
+    files = {}
+    repo.index.load
+
+    repo.index.each_entry do |entry|
+      files[entry.path] = repo.database.load(entry.oid).data
+    end
+
+    assert_equal(contents, files)
+  end
+
   def assert_workspace(contents)
     files = {}
 
