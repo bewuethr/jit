@@ -53,4 +53,77 @@ class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
       "g.txt" => "five"
     })
   end
+
+  def test_fail_to_apply_a_content_conflict
+    jit_cmd("cherry-pick", "topic^^")
+    assert_status(1)
+
+    short = repo.database.short_oid(resolve_revision("topic^^"))
+
+    assert_workspace({
+      "f.txt" => <<~EOF
+        <<<<<<< HEAD
+        four=======
+        six>>>>>>> #{short}... six
+      EOF
+    })
+
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UU f.txt
+    EOF
+  end
+
+  def test_fail_to_apply_a_modify_delete_conflict
+    jit_cmd("cherry-pick", "topic")
+    assert_status(1)
+
+    assert_workspace({
+      "f.txt" => "four",
+      "g.txt" => "eight"
+    })
+
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      DU g.txt
+    EOF
+  end
+
+  def test_continue_conflicted_cherry_pick
+    jit_cmd("cherry-pick", "topic")
+    jit_cmd("add", "g.txt")
+
+    jit_cmd("cherry-pick", "--continue")
+    assert_status(0)
+
+    commits = RevList.new(repo, ["@~3.."]).to_a
+    assert_equal([commits[1].oid], commits[0].parents)
+
+    assert_equal(["eight", "four", "three"], commits.map { _1.message.strip })
+
+    assert_index({
+      "f.txt" => "four",
+      "g.txt" => "eight"
+    })
+
+    assert_workspace({
+      "f.txt" => "four",
+      "g.txt" => "eight"
+    })
+  end
+
+  def test_commit_after_conflicted_cherry_pick
+    jit_cmd("cherry-pick", "topic")
+    jit_cmd("add", "g.txt")
+
+    jit_cmd("commit")
+    assert_status(0)
+
+    commits = RevList.new(repo, ["@~3.."]).to_a
+    assert_equal([commits[1].oid], commits[0].parents)
+
+    assert_equal(["eight", "four", "three"], commits.map { _1.message.strip })
+  end
 end
