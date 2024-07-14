@@ -148,7 +148,7 @@ class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
     })
   end
 
-  def test_stop_when_commits_include_conflict
+  def test_stop_when_commit_list_includes_conflict
     jit_cmd("cherry-pick", "topic^", "topic~3")
     assert_status(1)
 
@@ -157,5 +157,95 @@ class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
     assert_stdout <<~EOF
       DU g.txt
     EOF
+  end
+
+  def test_stop_when_commit_range_includes_conflict
+    jit_cmd("cherry-pick", "..topic")
+    assert_status(1)
+
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UU f.txt
+    EOF
+  end
+
+  def test_refuse_committing_in_conflicted_state
+    jit_cmd("cherry-pick", "..topic")
+    jit_cmd("commit")
+
+    assert_status(128)
+
+    assert_stderr <<~EOF
+      error: Committing is not possible because you have unmerged files.
+      hint: Fix them up in the work tree, and then use 'jit add/rm <file>'
+      hint: as appropriate to mark resolution and make a commit.
+      fatal: Exiting because of an unresolved conflict.
+    EOF
+  end
+
+  def test_refuse_continuing_in_conflicted_state
+    jit_cmd("cherry-pick", "..topic")
+    jit_cmd("cherry-pick", "--continue")
+
+    assert_status(128)
+
+    assert_stderr <<~EOF
+      error: Committing is not possible because you have unmerged files.
+      hint: Fix them up in the work tree, and then use 'jit add/rm <file>'
+      hint: as appropriate to mark resolution and make a commit.
+      fatal: Exiting because of an unresolved conflict.
+    EOF
+  end
+
+  def test_continue_after_resolving_conflicts
+    jit_cmd("cherry-pick", "..topic")
+
+    write_file("f.txt", "six")
+    jit_cmd("add", "f.txt")
+
+    jit_cmd("cherry-pick", "--continue")
+    assert_status(0)
+
+    revs = RevList.new(repo, ["@~5.."])
+
+    assert_equal(["eight", "seven", "six", "five", "four"],
+      revs.map { _1.message.strip })
+
+    assert_index({
+      "f.txt" => "six",
+      "g.txt" => "eight"
+    })
+
+    assert_workspace({
+      "f.txt" => "six",
+      "g.txt" => "eight"
+    })
+  end
+
+  def test_continue_after_committing_resolved_tree
+    jit_cmd("cherry-pick", "..topic")
+
+    write_file("f.txt", "six")
+    jit_cmd("add", "f.txt")
+    jit_cmd("commit")
+
+    jit_cmd("cherry-pick", "--continue")
+    assert_status(0)
+
+    revs = RevList.new(repo, ["@~5.."])
+
+    assert_equal(["eight", "seven", "six", "five", "four"],
+      revs.map { _1.message.strip })
+
+    assert_index({
+      "f.txt" => "six",
+      "g.txt" => "eight"
+    })
+
+    assert_workspace({
+      "f.txt" => "six",
+      "g.txt" => "eight"
+    })
   end
 end
