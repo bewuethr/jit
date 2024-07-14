@@ -8,11 +8,14 @@ class Command::TestCherryPick < Minitest::Test
   include CommandHelper
 
   def commit_tree(message, files)
+    @time ||= Time.now
+    @time += 10
+
     files.each do |path, contents|
       write_file(path, contents)
     end
     jit_cmd("add", ".")
-    commit(message)
+    commit(message, @time)
   end
 end
 
@@ -125,5 +128,34 @@ class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
     assert_equal([commits[1].oid], commits[0].parents)
 
     assert_equal(["eight", "four", "three"], commits.map { _1.message.strip })
+  end
+
+  def test_apply_multiple_non_conflicting_commits
+    jit_cmd("cherry-pick", "topic~3", "topic^", "topic")
+    assert_status(0)
+
+    revs = RevList.new(repo, ["@~4.."])
+    assert_equal(["eight", "seven", "five", "four"], revs.map { _1.message.strip })
+
+    assert_index({
+      "f.txt" => "four",
+      "g.txt" => "eight"
+    })
+
+    assert_workspace({
+      "f.txt" => "four",
+      "g.txt" => "eight"
+    })
+  end
+
+  def test_stop_when_commits_include_conflict
+    jit_cmd("cherry-pick", "topic^", "topic~3")
+    assert_status(1)
+
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      DU g.txt
+    EOF
   end
 end
