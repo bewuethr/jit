@@ -7,19 +7,6 @@ require "rev_list"
 class Command::TestCherryPick < Minitest::Test
   include CommandHelper
 
-  def commit_tree(message, files)
-    @time ||= Time.now
-    @time += 10
-
-    files.each do |path, contents|
-      write_file(path, contents)
-    end
-    jit_cmd("add", ".")
-    commit(message, @time)
-  end
-end
-
-class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
   def setup
     super
 
@@ -38,6 +25,19 @@ class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
     jit_cmd("checkout", "main")
   end
 
+  def commit_tree(message, files)
+    @time ||= Time.now
+    @time += 10
+
+    files.each do |path, contents|
+      write_file(path, contents)
+    end
+    jit_cmd("add", ".")
+    commit(message, @time)
+  end
+end
+
+class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
   def test_apply_commit_on_top_of_current_head
     jit_cmd("cherry-pick", "topic~3")
     assert_status(0)
@@ -248,4 +248,55 @@ class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
       "g.txt" => "eight"
     })
   end
+end
+
+class Command::TestCherryPickAbortInConflictedState < Command::TestCherryPick
+  def setup
+    super
+
+    jit_cmd("cherry-pick", "..topic")
+    jit_cmd("cherry-pick", "--abort")
+  end
+
+  def test_exit_successfully
+    assert_status(0)
+    assert_stderr("")
+  end
+
+  def test_reset_to_old_head
+    assert_equal("four", load_commit("HEAD").message.strip)
+
+    jit_cmd("status", "--porcelain")
+    assert_stdout("")
+  end
+
+  def test_remove_merge_state = refute(repo.pending_commit.in_progress?)
+end
+
+class Command::TestCherryPickAbortInCommittedState < Command::TestCherryPick
+  def setup
+    super
+
+    jit_cmd("cherry-pick", "..topic")
+    jit_cmd("add", ".")
+    stub_editor("picked\n") { jit_cmd("commit") }
+
+    jit_cmd("cherry-pick", "--abort")
+  end
+
+  def test_exit_with_warning
+    assert_status(0)
+    assert_stderr <<~EOF
+      warning: You seem to have moved HEAD. Not rewinding, check your HEAD!
+    EOF
+  end
+
+  def test_do_not_reset_head
+    assert_equal("picked", load_commit("HEAD").message.strip)
+
+    jit_cmd("status", "--porcelain")
+    assert_stdout("")
+  end
+
+  def test_remove_merge_state = refute(repo.pending_commit.in_progress?)
 end

@@ -3,9 +3,13 @@ require_relative "../lockfile"
 
 class Repository
   class Sequencer
+    UNSAFE_MESSAGE = "You seem to have moved HEAD. Not rewinding, check your HEAD!"
+
     def initialize(repository)
       @repo = repository
       @pathname = repository.git_path.join("sequencer")
+      @abort_path = @pathname.join("abort-safety")
+      @head_path = @pathname.join("head")
       @todo_path = @pathname.join("todo")
       @todo_file = nil
       @commands = []
@@ -13,6 +17,11 @@ class Repository
 
     def start
       Dir.mkdir(@pathname)
+
+      head_oid = @repo.refs.read_head
+      write_file(@head_path, head_oid)
+      write_file(@abort_path, head_oid)
+
       open_todo_file
     end
 
@@ -31,7 +40,10 @@ class Repository
 
     def next_command = @commands.first
 
-    def drop_command = @commands.shift
+    def drop_command
+      @commands.shift
+      write_file(@abort_path, @repo.refs.read_head)
+    end
 
     def dump
       return unless @todo_file
@@ -44,7 +56,29 @@ class Repository
       @todo_file.commit
     end
 
+    def abort
+      head_oid = File.read(@head_path).strip
+      expected = File.read(@abort_path).strip
+      actual = @repo.refs.read_head
+
+      quit
+
+      raise UNSAFE_MESSAGE unless actual == expected
+
+      @repo.hard_reset(head_oid)
+      orig_head = @repo.refs.update_head(head_oid)
+      @repo.refs.update_ref(Refs::ORIG_HEAD, orig_head)
+    end
+
     def quit = FileUtils.rm_rf(@pathname)
+
+    private def write_file(path, content)
+      lockfile = Lockfile.new(path)
+      lockfile.hold_for_update
+      lockfile.write(content)
+      lockfile.write("\n")
+      lockfile.commit
+    end
 
     private def open_todo_file
       return unless File.directory?(@pathname)
