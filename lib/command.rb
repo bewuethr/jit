@@ -8,6 +8,7 @@ require_relative "command/init"
 require_relative "command/log"
 require_relative "command/merge"
 require_relative "command/reset"
+require_relative "command/revert"
 require_relative "command/rm"
 require_relative "command/status"
 
@@ -25,6 +26,7 @@ module Command
     "log" => Log,
     "merge" => Merge,
     "reset" => Reset,
+    "revert" => Revert,
     "rm" => Rm,
     "status" => Status
   }

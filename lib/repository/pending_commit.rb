@@ -6,7 +6,8 @@ class Repository
 
     HEAD_FILES = {
       merge: "MERGE_HEAD",
-      cherry_pick: "CHERRY_PICK_HEAD"
+      cherry_pick: "CHERRY_PICK_HEAD",
+      revert: "REVERT_HEAD"
     }
 
     def initialize(pathname)
