@@ -42,7 +42,7 @@ class Command::TestRevertWithChainOfCommits < Command::TestRevert
     revs = RevList.new(repo, ["@~3.."])
 
     assert_equal(['Revert "six"', "eight", "seven"],
-      revs.map{ _1.title_line.strip })
+      revs.map { _1.title_line.strip })
 
     assert_index({
       "f.txt" => "four",
@@ -104,7 +104,7 @@ class Command::TestRevertWithChainOfCommits < Command::TestRevert
     assert_equal([commits[1].oid], commits[0].parents)
 
     assert_equal(['Revert "five"', "eight", "seven"],
-      commits.map{ _1.title_line.strip })
+      commits.map { _1.title_line.strip })
 
     assert_index({
       "f.txt" => "six",
@@ -128,7 +128,7 @@ class Command::TestRevertWithChainOfCommits < Command::TestRevert
     assert_equal([commits[1].oid], commits[0].parents)
 
     assert_equal(['Revert "five"', "eight", "seven"],
-      commits.map{ _1.title_line.strip })
+      commits.map { _1.title_line.strip })
   end
 
   def test_apply_multiple_non_conflicting_commits
@@ -138,7 +138,7 @@ class Command::TestRevertWithChainOfCommits < Command::TestRevert
     revs = RevList.new(repo, ["@~4.."])
 
     assert_equal(['Revert "six"', 'Revert "seven"', 'Revert "eight"', "eight"],
-      revs.map{ _1.title_line.strip })
+      revs.map { _1.title_line.strip })
 
     assert_index({
       "f.txt" => "four",
@@ -213,7 +213,7 @@ class Command::TestRevertWithChainOfCommits < Command::TestRevert
     revs = RevList.new(repo, ["@~4.."])
 
     assert_equal(['Revert "five"', 'Revert "six"', 'Revert "seven"', "eight"],
-      revs.map{ _1.title_line.strip })
+      revs.map { _1.title_line.strip })
 
     assert_index({"f.txt" => "four"})
     assert_workspace({"f.txt" => "four"})
@@ -232,7 +232,7 @@ class Command::TestRevertWithChainOfCommits < Command::TestRevert
     revs = RevList.new(repo, ["@~4.."])
 
     assert_equal(['Revert "five"', 'Revert "six"', 'Revert "seven"', "eight"],
-      revs.map{ _1.title_line.strip })
+      revs.map { _1.title_line.strip })
 
     assert_index({"f.txt" => "four"})
     assert_workspace({"f.txt" => "four"})
