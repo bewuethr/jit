@@ -1,3 +1,4 @@
+require_relative "config/stack"
 require_relative "database"
 require_relative "index"
 require_relative "refs"
@@ -29,6 +30,10 @@ class Repository
 
   def workspace
     @workspace ||= Workspace.new(@git_path.dirname)
+  end
+
+  def config
+    @config ||= Config::Stack.new(@git_path)
   end
 
   def status(commit_oid = nil) = Status.new(self, commit_oid)
