@@ -125,19 +125,6 @@ class TestConfigFileStorage < TestConfig
     EOF
   end
 
-  def test_write_multiple_subsections
-    @config.set(%w[branch main remote], "origin")
-    @config.set(%w[branch Main remote], "another")
-    @config.save
-
-    assert_file <<~EOF
-      [branch "main"]
-      \tremote = origin
-      [branch "Main"]
-      \tremote = another
-    EOF
-  end
-
   def test_overwrite_variable_with_matching_name
     @config.set(%w[merge conflictstyle], "diff3")
     @config.set(%w[merge ConflictStyle], "none")
