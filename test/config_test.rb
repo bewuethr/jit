@@ -9,6 +9,8 @@ class TestConfig < Minitest::Test
   def open_config = Config.new(Pathname.new(@path)).tap(&:open)
 
   def setup
+    super
+
     @path = File.expand_path("../test-config", __FILE__)
     @config = open_config
   end
@@ -133,6 +135,30 @@ class TestConfigFileStorage < TestConfig
     assert_file <<~EOF
       [merge]
       \tConflictStyle = none
+    EOF
+  end
+
+  def test_remove_section
+    @config.set(%w[core editor], "ed")
+    @config.set(%w[remote origin url], "ssh://example.com/repo")
+    @config.remove_section(%w[core])
+    @config.save
+
+    assert_file <<~EOF
+      [remote "origin"]
+      \turl = ssh://example.com/repo
+    EOF
+  end
+
+  def test_remove_subsection
+    @config.set(%w[core editor], "ed")
+    @config.set(%w[remote origin url], "ssh://example.com/repo")
+    @config.remove_section(%w[remote origin])
+    @config.save
+
+    assert_file <<~EOF
+      [core]
+      \teditor = ed
     EOF
   end
 

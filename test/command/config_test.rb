@@ -86,4 +86,30 @@ class Command::TestRevert < Minitest::Test
     assert_status(0)
     assert_stdout("new-value\n")
   end
+
+  def test_remove_section
+    jit_cmd("config", "core.editor", "ed")
+    jit_cmd("config", "remote.origin.url", "ssh://example.com/repo")
+    jit_cmd("config", "--remove-section", "core")
+
+    jit_cmd("config", "--local", "remote.origin.url")
+    assert_status(0)
+    assert_stdout("ssh://example.com/repo\n")
+
+    jit_cmd("config", "--local", "core.editor")
+    assert_status(1)
+  end
+
+  def test_remove_subsection
+    jit_cmd("config", "core.editor", "ed")
+    jit_cmd("config", "remote.origin.url", "ssh://example.com/repo")
+    jit_cmd("config", "--remove-section", "remote.origin")
+
+    jit_cmd("config", "--local", "core.editor")
+    assert_status(0)
+    assert_stdout("ed\n")
+
+    jit_cmd("config", "--local", "remote.origin.url")
+    assert_status(1)
+  end
 end

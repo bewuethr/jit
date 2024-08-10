@@ -12,12 +12,15 @@ module Command
       @parser.on("--add <name>") { @options[:add] = _1 }
       @parser.on("--replace-all <name>") { @options[:replace] = _1 }
       @parser.on("--get-all <name>") { @options[:get_all] = _1 }
+
+      @parser.on("--remove-section <name>") { @options[:remove_section] = _1 }
     end
 
     def run
       add_variable if @options[:add]
       replace_variable if @options[:replace]
       get_all_values if @options[:get_all]
+      remove_section if @options[:remove_section]
 
       key, value = parse_key(@args[0]), @args[1]
 
@@ -39,6 +42,11 @@ module Command
     private def replace_variable
       key = parse_key(@options[:replace])
       edit_config { _1.replace_all(key, @args[0]) }
+    end
+
+    private def remove_section
+      key = @options[:remove_section].split(".", 2)
+      edit_config { _1.remove_section(key) }
     end
 
     private def get_all_values

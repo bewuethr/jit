@@ -114,6 +114,11 @@ class Config
     end
   end
 
+  def remove_section(key)
+    key = Section.normalize(key)
+    @lines.delete(key) ? true : false
+  end
+
   def subsections(name)
     name, _ = Section.normalize([name])
     sections = []
@@ -229,10 +234,5 @@ class Config
 
   private def remove_all(section, lines)
     lines.each { lines_for(section).delete(_1) }
-  end
-
-  private def remove_section(key)
-    key = Section.normalize(key)
-    @lines.delete(key) ? true : false
   end
 end
