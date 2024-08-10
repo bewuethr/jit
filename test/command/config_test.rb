@@ -6,7 +6,9 @@ require "rev_list"
 
 class Command::TestRevert < Minitest::Test
   include CommandHelper
+end
 
+class Command::TestRevertSingleValue < Command::TestRevert
   def test_return_1_for_unknown_variable
     jit_cmd("config", "--local", "no.such")
     assert_status(1)
@@ -40,51 +42,12 @@ class Command::TestRevert < Minitest::Test
     assert_stdout("git@github.com:bewuethr.jit\n")
   end
 
-  def test_return_last_value_of_multi_valued_variable
-    jit_cmd("config", "--add", "remote.origin.fetch", "main")
-    jit_cmd("config", "--add", "remote.origin.fetch", "topic")
+  def test_unset_variable
+    jit_cmd("config", "core.editor", "ed")
+    jit_cmd("config", "--unset", "core.editor")
 
-    jit_cmd("config", "remote.origin.fetch")
-    assert_status(0)
-    assert_stdout("topic\n")
-  end
-
-  def test_return_all_values_of_multi_valued_variable
-    jit_cmd("config", "--add", "remote.origin.fetch", "main")
-    jit_cmd("config", "--add", "remote.origin.fetch", "topic")
-
-    jit_cmd("config", "--get-all", "remote.origin.fetch")
-    assert_status(0)
-
-    assert_stdout <<~EOF
-      main
-      topic
-    EOF
-  end
-
-  def test_return_5_when_trying_to_set_multi_valued_variable
-    jit_cmd("config", "--add", "remote.origin.fetch", "main")
-    jit_cmd("config", "--add", "remote.origin.fetch", "topic")
-
-    jit_cmd("config", "remote.origin.fetch", "new-value")
-    assert_status(5)
-
-    jit_cmd("config", "--get-all", "remote.origin.fetch")
-
-    assert_stdout <<~EOF
-      main
-      topic
-    EOF
-  end
-
-  def test_replace_multi_valued_variable
-    jit_cmd("config", "--add", "remote.origin.fetch", "main")
-    jit_cmd("config", "--add", "remote.origin.fetch", "topic")
-    jit_cmd("config", "--replace-all", "remote.origin.fetch", "new-value")
-
-    jit_cmd("config", "--get-all", "remote.origin.fetch")
-    assert_status(0)
-    assert_stdout("new-value\n")
+    jit_cmd("config", "--local", "Core.Editor")
+    assert_status(1)
   end
 
   def test_remove_section
@@ -110,6 +73,71 @@ class Command::TestRevert < Minitest::Test
     assert_stdout("ed\n")
 
     jit_cmd("config", "--local", "remote.origin.url")
+    assert_status(1)
+  end
+end
+
+class Command::TestRevertMultiValue < Command::TestRevert
+  def setup
+    super
+
+    jit_cmd("config", "--add", "remote.origin.fetch", "main")
+    jit_cmd("config", "--add", "remote.origin.fetch", "topic")
+  end
+
+  def test_return_last_value
+    jit_cmd("config", "remote.origin.fetch")
+    assert_status(0)
+    assert_stdout("topic\n")
+  end
+
+  def test_return_all_values
+    jit_cmd("config", "--get-all", "remote.origin.fetch")
+    assert_status(0)
+
+    assert_stdout <<~EOF
+      main
+      topic
+    EOF
+  end
+
+  def test_return_5_when_trying_to_set_variable
+    jit_cmd("config", "remote.origin.fetch", "new-value")
+    assert_status(5)
+
+    jit_cmd("config", "--get-all", "remote.origin.fetch")
+
+    assert_stdout <<~EOF
+      main
+      topic
+    EOF
+  end
+
+  def test_replace_variable
+    jit_cmd("config", "--replace-all", "remote.origin.fetch", "new-value")
+
+    jit_cmd("config", "--get-all", "remote.origin.fetch")
+    assert_status(0)
+    assert_stdout("new-value\n")
+  end
+
+  def test_return_5_when_trying_to_unset_variable
+    jit_cmd("config", "--unset", "remote.origin.fetch")
+    assert_status(5)
+
+    jit_cmd("config", "--get-all", "remote.origin.fetch")
+    assert_status(0)
+
+    assert_stdout <<~EOF
+      main
+      topic
+    EOF
+  end
+
+  def test_unset_variable
+    jit_cmd("config", "--unset-all", "remote.origin.fetch")
+
+    jit_cmd("config", "--get-all", "remote.origin.fetch")
     assert_status(1)
   end
 end

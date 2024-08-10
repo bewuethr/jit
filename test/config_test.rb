@@ -78,6 +78,25 @@ class TestConfigInMemory < TestConfig
 
     assert_equal(["new-value"], @config.get_all(key))
   end
+
+  def test_refuse_unsetting_value_for_multi_valued_key
+    key = %w[remote origin fetch]
+
+    @config.add(key, "main")
+    @config.add(key, "topic")
+
+    assert_raises(Config::Conflict) { @config.unset(key) }
+  end
+
+  def test_unset_all_values_for_multi_valued_key
+    key = %w[remote origin fetch]
+
+    @config.add(key, "main")
+    @config.add(key, "topic")
+    @config.unset_all(key)
+
+    assert_equal([], @config.get_all(key))
+  end
 end
 
 class TestConfigFileStorage < TestConfig
@@ -159,6 +178,15 @@ class TestConfigFileStorage < TestConfig
     assert_file <<~EOF
       [core]
       \teditor = ed
+    EOF
+  end
+
+  def test_unset_variable
+    @config.set(%w[merge conflictstyle], "diff3")
+    @config.unset(%w[merge conflictstyle])
+    @config.save
+
+    assert_file <<~EOF
     EOF
   end
 
