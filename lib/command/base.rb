@@ -75,7 +75,8 @@ module Command
     end
 
     def editor_command
-      @env["GIT_EDITOR"] || @env["VISUAL"] || @env["EDITOR"]
+      core_editor = repo.config.get(%w[core editor])
+      @env["GIT_EDITOR"] || core_editor || @env["VISUAL"] || @env["EDITOR"]
     end
   end
 end
