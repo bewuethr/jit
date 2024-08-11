@@ -7,6 +7,14 @@ module Command
     NULL_OID = "0" * 40
     NULL_PATH = "/dev/null"
 
+    DIFF_FORMATS = {
+      context: :normal,
+      meta: :bold,
+      frag: :cyan,
+      old: :red,
+      new: :green
+    }
+
     Target = Struct.new(:path, :oid, :mode, :data) do
       def diff_path
         mode ? path : NULL_PATH
@@ -27,7 +35,7 @@ module Command
 
     private def from_nothing(path) = Target.new(path, NULL_OID, nil, "")
 
-    private def header(string) = (puts fmt(:bold, string))
+    private def header(string) = (puts diff_fmt(:meta, string))
 
     private def short(oid) = repo.database.short_oid(oid)
 
@@ -97,18 +105,25 @@ module Command
     end
 
     private def print_diff_hunk(hunk)
-      puts fmt(:cyan, hunk.header)
-      hunk.edits.each { |edit| print_diff_edit(edit) }
+      puts diff_fmt(:frag, hunk.header)
+      hunk.edits.each { print_diff_edit(_1) }
     end
 
     private def print_diff_edit(edit)
       text = edit.to_s.rstrip
 
       case edit.type
-      when :eql then puts text
-      when :ins then puts fmt(:green, text)
-      when :del then puts fmt(:red, text)
+      when :eql then puts diff_fmt(:context, text)
+      when :ins then puts diff_fmt(:new, text)
+      when :del then puts diff_fmt(:old, text)
       end
+    end
+
+    private def diff_fmt(name, text)
+      key = ["color", "diff", name]
+      style = repo.config.get(key)&.split(/ +/) || DIFF_FORMATS.fetch(name)
+
+      fmt(style, text)
     end
   end
 end
