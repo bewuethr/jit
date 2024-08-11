@@ -7,6 +7,19 @@ require "rev_list"
 class Command::TestCherryPick < Minitest::Test
   include CommandHelper
 
+  def commit_tree(message, files)
+    @time ||= Time.now
+    @time += 10
+
+    files.each do |path, contents|
+      write_file(path, contents)
+    end
+    jit_cmd("add", ".")
+    commit(message, @time)
+  end
+end
+
+class Command::TestCherryPickBranches < Command::TestCherryPick
   def setup
     super
 
@@ -24,20 +37,9 @@ class Command::TestCherryPick < Minitest::Test
 
     jit_cmd("checkout", "main")
   end
-
-  def commit_tree(message, files)
-    @time ||= Time.now
-    @time += 10
-
-    files.each do |path, contents|
-      write_file(path, contents)
-    end
-    jit_cmd("add", ".")
-    commit(message, @time)
-  end
 end
 
-class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
+class Command::TestCherryPickTwoBranches < Command::TestCherryPickBranches
   def test_apply_commit_on_top_of_current_head
     jit_cmd("cherry-pick", "topic~3")
     assert_status(0)
@@ -250,7 +252,7 @@ class Command::TestCherryPickWithTwoBranches < Command::TestCherryPick
   end
 end
 
-class Command::TestCherryPickAbortInConflictedState < Command::TestCherryPick
+class Command::TestCherryPickAbortInConflictedState < Command::TestCherryPickBranches
   def setup
     super
 
@@ -273,7 +275,7 @@ class Command::TestCherryPickAbortInConflictedState < Command::TestCherryPick
   def test_remove_merge_state = refute(repo.pending_commit.in_progress?)
 end
 
-class Command::TestCherryPickAbortInCommittedState < Command::TestCherryPick
+class Command::TestCherryPickAbortInCommittedState < Command::TestCherryPickBranches
   def setup
     super
 
@@ -299,4 +301,119 @@ class Command::TestCherryPickAbortInCommittedState < Command::TestCherryPick
   end
 
   def test_remove_merge_state = refute(repo.pending_commit.in_progress?)
+end
+
+class Command::TestCherryPickMerges < Command::TestCherryPick
+  #   f---f---f---f [main]
+  #        \
+  #         g---h---o---o [topic]
+  #          \     /   /
+  #           j---j---f [side]
+  def setup
+    super
+
+    %w[one two three four].each do |message|
+      commit_tree(message, "f.txt" => message)
+    end
+
+    jit_cmd("branch", "topic", "@~2")
+    jit_cmd("checkout", "topic")
+    commit_tree("five", "g.txt" => "five")
+    commit_tree("six", "h.txt" => "six")
+
+    jit_cmd("branch", "side", "@^")
+    jit_cmd("checkout", "side")
+    commit_tree("seven", "j.txt" => "seven")
+    commit_tree("eight", "j.txt" => "eight")
+    commit_tree("nine", "f.txt" => "nine")
+
+    jit_cmd("checkout", "topic")
+    jit_cmd("merge", "side^", "-m", "merge side^")
+    jit_cmd("merge", "side", "-m", "merge side")
+
+    jit_cmd("checkout", "main")
+  end
+
+  def test_refuse_cherry_pick_merge_without_specifying_parent
+    jit_cmd("cherry-pick", "topic")
+    assert_status(1)
+
+    oid = resolve_revision("topic")
+
+    assert_stderr <<~EOF
+      error: commit #{oid} is a merge but no -m option was given
+    EOF
+  end
+
+  def test_refuse_cherry_pick_non_merge_with_mainline
+    jit_cmd("cherry-pick", "-m", "1", "side")
+    assert_status(1)
+
+    oid = resolve_revision("side")
+
+    assert_stderr <<~EOF
+      error: mainline was specified but commit #{oid} is not a merge
+    EOF
+  end
+
+  def test_cherry_pick_merge_based_on_first_parent
+    jit_cmd("cherry-pick", "-m", "1", "topic^")
+    assert_status(0)
+
+    assert_index({
+      "f.txt" => "four",
+      "j.txt" => "eight"
+    })
+
+    assert_workspace({
+      "f.txt" => "four",
+      "j.txt" => "eight"
+    })
+  end
+
+  def test_cherry_pick_merge_based_on_second_parent
+    jit_cmd("cherry-pick", "-m", "2", "topic^")
+    assert_status(0)
+
+    assert_index({
+      "f.txt" => "four",
+      "h.txt" => "six"
+    })
+
+    assert_workspace({
+      "f.txt" => "four",
+      "h.txt" => "six"
+    })
+  end
+
+  def test_resume_cherry_picking_merge_after_conflict
+    jit_cmd("cherry-pick", "-m", "1", "topic", "topic^")
+    assert_status(1)
+
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UU f.txt
+    EOF
+
+    write_file("f.txt", "resolved")
+    jit_cmd("add", "f.txt")
+    jit_cmd("cherry-pick", "--continue")
+    assert_status(0)
+
+    revs = RevList.new(repo, ["@~3.."])
+
+    assert_equal(["merge side^", "merge side", "four"],
+      revs.map { _1.message.strip })
+
+    assert_index({
+      "f.txt" => "resolved",
+      "j.txt" => "eight"
+    })
+
+    assert_workspace({
+      "f.txt" => "resolved",
+      "j.txt" => "eight"
+    })
+  end
 end

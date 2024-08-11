@@ -17,7 +17,9 @@ class Command::TestRevert < Minitest::Test
     jit_cmd("add", ".")
     commit(message, @time)
   end
+end
 
+class Command::TestRevertWithoutMerge < Command::TestRevert
   def setup
     super
 
@@ -32,9 +34,7 @@ class Command::TestRevert < Minitest::Test
   end
 end
 
-class Command::TestRevertWithChainOfCommits < Command::TestRevert
-  def setup = super
-
+class Command::TestRevertWithChainOfCommits < Command::TestRevertWithoutMerge
   def test_revert_commit_on_top_of_current_head
     jit_cmd("revert", "@~2")
     assert_status(0)
@@ -239,7 +239,7 @@ class Command::TestRevertWithChainOfCommits < Command::TestRevert
   end
 end
 
-class Command::TestRevertAbortConflicted < Command::TestRevert
+class Command::TestRevertAbortConflicted < Command::TestRevertWithoutMerge
   def setup
     super
 
@@ -264,7 +264,7 @@ class Command::TestRevertAbortConflicted < Command::TestRevert
   end
 end
 
-class Command::TestRevertAbortCommitted < Command::TestRevert
+class Command::TestRevertAbortCommitted < Command::TestRevertWithoutMerge
   def setup
     super
 
@@ -291,5 +291,108 @@ class Command::TestRevertAbortCommitted < Command::TestRevert
 
   def test_remove_merge_state
     refute(repo.pending_commit.in_progress?)
+  end
+end
+
+class Command::TestRevertWithMerges < Command::TestRevert
+  #   f---f---f---o---o---h [main]
+  #        \     /   /
+  #         g---g---h [topic]
+  def setup
+    super
+
+    %w[one two three].each do |message|
+      commit_tree(message, "f.txt" => message)
+    end
+
+    jit_cmd("branch", "topic", "@^")
+    jit_cmd("checkout", "topic")
+    commit_tree("four", "g.txt" => "four")
+    commit_tree("five", "g.txt" => "five")
+    commit_tree("six", "h.txt" => "six")
+
+    jit_cmd("checkout", "main")
+
+    jit_cmd("merge", "topic^", "-m", "merge topic^")
+    jit_cmd("merge", "topic", "-m", "merge topic")
+
+    commit_tree("seven", "h.txt" => "seven")
+  end
+
+  def test_refuse_reverting_merge_without_speciyfing_parent
+    jit_cmd("revert", "@^")
+    assert_status(1)
+
+    oid = resolve_revision("@^")
+
+    assert_stderr <<~EOF
+      error: commit #{oid} is a merge but no -m option was given
+    EOF
+  end
+
+  def test_refuse_reverting_non_merge_with_mainline
+    jit_cmd("revert", "-m", "1", "@")
+    assert_status(1)
+
+    oid = resolve_revision("@")
+
+    assert_stderr <<~EOF
+      error: mainline was specified but commit #{oid} is not a merge
+    EOF
+  end
+
+  def test_revert_merge_based_on_first_parent
+    jit_cmd("revert", "-m", "1", "@~2")
+    assert_status(0)
+
+    assert_index({
+      "f.txt" => "three",
+      "h.txt" => "seven"
+    })
+
+    assert_workspace({
+      "f.txt" => "three",
+      "h.txt" => "seven"
+    })
+  end
+
+  def test_revert_merge_based_on_second_parent
+    jit_cmd("revert", "-m", "2", "@~2")
+    assert_status(0)
+
+    assert_index({
+      "f.txt" => "two",
+      "g.txt" => "five",
+      "h.txt" => "seven"
+    })
+
+    assert_workspace({
+      "f.txt" => "two",
+      "g.txt" => "five",
+      "h.txt" => "seven"
+    })
+  end
+
+  def test_resume_reverting_merges_after_conflict
+    jit_cmd("revert", "-m", "1", "@^", "@^^")
+    assert_status(1)
+
+    jit_cmd("status", "--porcelain")
+
+    assert_stdout <<~EOF
+      UD h.txt
+    EOF
+
+    jit_cmd("rm", "-f", "h.txt")
+    jit_cmd("revert", "--continue")
+    assert_status(0)
+
+    revs = RevList.new(repo, ["@~3.."])
+
+    assert_equal(['Revert "merge topic^"', 'Revert "merge topic"', "seven"],
+      revs.map { _1.title_line.strip })
+
+    assert_index("f.txt" => "three")
+    assert_workspace("f.txt" => "three")
   end
 end

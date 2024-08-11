@@ -15,6 +15,8 @@ module Command
       @parser.on("--continue") { @options[:mode] = :continue }
       @parser.on("--abort") { @options[:mode] = :abort }
       @parser.on("--quit") { @options[:mode] = :quit }
+
+      @parser.on("-m <parent>", "--mainline=<parent>", Integer) { @options[:mainline] = _1 }
     end
 
     def run
@@ -24,9 +26,29 @@ module Command
       when :quit then handle_quit
       end
 
-      sequencer.start
+      sequencer.start(@options)
       store_commit_sequence
       resume_sequencer
+    end
+
+    def select_parent(commit)
+      mainline = sequencer.get_option("mainline")
+
+      if commit.merge?
+        return commit.parents[mainline - 1] if mainline
+
+        @stderr.puts <<~EOF
+          error: commit #{commit.oid} is a merge but no -m option was given
+        EOF
+      else
+        return commit.parent unless mainline
+
+        @stderr.puts <<~EOF
+          error: mainline was specified but commit #{commit.oid} is not a merge
+        EOF
+      end
+
+      exit 1
     end
 
     private def sequencer = @sequencer ||= Repository::Sequencer.new(repo)
