@@ -1,4 +1,5 @@
 require "fileutils"
+require "pathname"
 
 require_relative "lockfile"
 require_relative "revision"
@@ -6,6 +7,10 @@ require_relative "revision"
 class Refs
   HEAD = "HEAD"
   ORIG_HEAD = "ORIG_HEAD"
+
+  REFS_DIR = Pathname.new("refs")
+  HEADS_DIR = REFS_DIR.join("heads")
+  REMOTES_DIR = REFS_DIR.join("remotes")
 
   SYMREF = /^ref: (.+$)/
 
@@ -27,8 +32,9 @@ class Refs
 
   def initialize(pathname)
     @pathname = pathname
-    @refs_path = @pathname.join("refs")
-    @heads_path = @refs_path.join("heads")
+    @refs_path = @pathname.join(REFS_DIR)
+    @heads_path = @pathname.join(HEADS_DIR)
+    @remotes_path = @pathname.join(REMOTES_DIR)
   end
 
   def create_branch(branch_name, start_oid)
@@ -101,11 +107,12 @@ class Refs
   def short_name(path)
     path = @pathname.join(path)
 
-    prefix = [@heads_path, @pathname].find do |dir|
+    prefix = [@remotes_path, @heads_path, @pathname].find do |dir|
       path.dirname.ascend.any? { |parent| parent == dir }
     end
 
-    path.relative_path_from(prefix).to_s
+    path = path.relative_path_from(prefix) if prefix
+    path.to_s
   end
 
   def delete_branch(branch_name)
@@ -204,8 +211,9 @@ class Refs
   end
 
   private def path_for_name(name)
-    prefixes = [@pathname, @refs_path, @heads_path]
-    prefix = prefixes.find { |path| File.file?(path.join(name)) }
+    prefixes = [@pathname, @refs_path, @heads_path, @remotes_path]
+    prefix = prefixes.find { File.file?(_1.join(name)) }
+
     prefix&.join(name)
   end
 
