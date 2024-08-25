@@ -10,6 +10,7 @@ require_relative "command/log"
 require_relative "command/merge"
 require_relative "command/remote"
 require_relative "command/reset"
+require_relative "command/rev_list"
 require_relative "command/revert"
 require_relative "command/rm"
 require_relative "command/status"
@@ -30,6 +31,7 @@ module Command
     "merge" => Merge,
     "remote" => Remote,
     "reset" => Reset,
+    "rev-list" => RevList,
     "revert" => Revert,
     "rm" => Rm,
     "status" => Status

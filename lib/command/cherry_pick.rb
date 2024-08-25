@@ -12,7 +12,7 @@ module Command
     private def merge_type = :cherry_pick
 
     private def store_commit_sequence
-      commits = RevList.new(repo, @args.reverse, walk: false)
+      commits = ::RevList.new(repo, @args.reverse, walk: false)
       commits.reverse_each { sequencer.pick(_1) }
     end
 

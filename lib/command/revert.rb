@@ -12,7 +12,7 @@ module Command
     private def merge_type = :revert
 
     private def store_commit_sequence
-      commits = RevList.new(repo, @args, walk: false)
+      commits = ::RevList.new(repo, @args, walk: false)
       commits.each { sequencer.revert(_1) }
     end
 
