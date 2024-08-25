@@ -16,9 +16,15 @@ class RevList
     @queue = []
     @limited = false
     @output = []
+    @pending = []
     @prune = []
     @diffs = {}
+
+    @objects = options.fetch(:objects, false)
+    @missing = options.fetch(:missing, false)
     @walk = options.fetch(:walk, true)
+
+    include_refs(repo.refs.list_all_refs) if options[:all]
 
     revs.each { handle_revision(_1) }
     handle_revision(Revision::HEAD) if @queue.empty?
@@ -28,12 +34,19 @@ class RevList
 
   def each
     limit_list if @limited
-    traverse_commits { |commit| yield commit }
+    mark_edges_uninteresting if @objects
+    traverse_commits { yield _1 }
+    traverse_pending { yield _1 }
   end
 
   def tree_diff(old_oid, new_oid)
     key = [old_oid, new_oid]
     @diffs[key] ||= @repo.database.tree_diff(old_oid, new_oid, @filter)
+  end
+
+  private def include_refs(refs)
+    oids = refs.map(&:read_oid).compact
+    oids.each { handle_revision(_1) }
   end
 
   private def handle_revision(rev)
@@ -63,6 +76,8 @@ class RevList
       mark(oid, :uninteresting)
       mark_parents_uninteresting(commit)
     end
+  rescue Revision::InvalidObject => error
+    raise error unless @missing
   end
 
   private def load_commit(oid)
@@ -92,6 +107,37 @@ class RevList
 
       commit = @commits[oid]
       queue.concat(commit.parents) if commit
+    end
+  end
+
+  private def mark_edges_uninteresting
+    @queue.each do |commit|
+      if marked?(commit.oid, :uninteresting)
+        mark_tree_uninteresting(commit.tree)
+      end
+
+      commit.parents.each do |oid|
+        next unless marked?(oid, :uninteresting)
+
+        parent = load_commit(oid)
+        mark_tree_uninteresting(parent.tree)
+      end
+    end
+  end
+
+  private def mark_tree_uninteresting(tree_oid)
+    entry = @repo.database.tree_entry(tree_oid)
+    traverse_tree(entry) { mark(_1.oid, :uninteresting) }
+  end
+
+  private def traverse_tree(entry)
+    return unless yield entry
+    return unless entry.tree?
+
+    tree = @repo.database.load(entry.oid)
+
+    tree.entries.each do |name, item|
+      traverse_tree(item) { yield _1 }
     end
   end
 
@@ -133,7 +179,22 @@ class RevList
       next if marked?(commit.oid, :uninteresting)
       next if marked?(commit.oid, :treesame)
 
+      @pending.push(@repo.database.tree_entry(commit.tree))
       yield commit
+    end
+  end
+
+  private def traverse_pending
+    return unless @objects
+
+    @pending.each do |entry|
+      traverse_tree(entry) do |object|
+        next if marked?(object.oid, :uninteresting)
+        next unless mark(object.oid, :seen)
+
+        yield object
+        true
+      end
     end
   end
 

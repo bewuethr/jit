@@ -36,6 +36,8 @@ class Database
 
   def short_oid(oid) = oid[0..6]
 
+  def tree_entry(oid) = Entry.new(oid, Tree::TREE_MODE)
+
   def load(oid) = @objects[oid] ||= read_object(oid)
 
   def prefix_match(name)
