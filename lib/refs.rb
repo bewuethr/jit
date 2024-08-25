@@ -98,7 +98,7 @@ class Refs
     table
   end
 
-  private def list_all_refs
+  def list_all_refs
     [SymRef.new(self, HEAD)] + list_refs(@refs_path)
   end
 
