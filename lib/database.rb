@@ -20,6 +20,8 @@ class Database
     "commit" => Commit
   }
 
+  Raw = Struct.new(:type, :size, :data)
+
   def initialize(pathname)
     @pathname = pathname
     @objects = {}
@@ -39,6 +41,11 @@ class Database
   def tree_entry(oid) = Entry.new(oid, Tree::TREE_MODE)
 
   def load(oid) = @objects[oid] ||= read_object(oid)
+
+  def load_raw(oid)
+    type, size, scanner = read_object_header(oid)
+    Raw.new(type, size, scanner.rest)
+  end
 
   def prefix_match(name)
     dirname = object_path(name).dirname
@@ -115,16 +122,23 @@ class Database
   end
 
   private def read_object(oid)
-    data = Zlib::Inflate.inflate(File.read(object_path(oid)))
-    scanner = StringScanner.new(data)
-
-    type = scanner.scan_until(/ /).strip
-    _size = scanner.scan_until(/\0/)[0..-2]
+    type, _, scanner = read_object_header(oid)
 
     object = TYPES[type].parse(scanner)
     object.oid = oid
 
     object
+  end
+
+  private def read_object_header(oid, read_bytes = nil)
+    path = object_path(oid)
+    data = Zlib::Inflate.inflate(File.read(path, read_bytes))
+    scanner = StringScanner.new(data)
+
+    type = scanner.scan_until(/ /).strip
+    size = scanner.scan_until(/\0/)[0..-2].to_i
+
+    [type, size, scanner]
   end
 
   private def build_list(list, entry, prefix)
