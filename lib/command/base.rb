@@ -15,10 +15,11 @@ module Command
       throw :exit
     end
 
-    def initialize(dir, env, args, stdout, stderr)
+    def initialize(dir, env, args, stdin, stdout, stderr)
       @dir = dir
       @env = env
       @args = args
+      @stdin = stdin
       @stdout = stdout
       @stderr = stderr
       @isatty = @stdout.isatty
