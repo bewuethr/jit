@@ -1,4 +1,5 @@
 require_relative "pack/reader"
+require_relative "pack/stream"
 require_relative "pack/writer"
 
 module Pack
