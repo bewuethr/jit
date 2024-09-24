@@ -5,7 +5,7 @@ module Pack
   class Reader
     attr_reader :count
 
-    def initalize(input) = @input = input
+    def initialize(input) = @input = input
 
     def read_header
       data = @input.read(HEADER_SIZE)

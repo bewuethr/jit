@@ -14,6 +14,8 @@ require_relative "command/rev_list"
 require_relative "command/revert"
 require_relative "command/rm"
 require_relative "command/status"
+require_relative "command/fetch"
+require_relative "command/upload_pack"
 
 module Command
   Unknown = Class.new(StandardError)
@@ -26,6 +28,7 @@ module Command
     "commit" => Commit,
     "config" => Config,
     "diff" => Diff,
+    "fetch" => Fetch,
     "init" => Init,
     "log" => Log,
     "merge" => Merge,
@@ -34,7 +37,8 @@ module Command
     "rev-list" => RevList,
     "revert" => Revert,
     "rm" => Rm,
-    "status" => Status
+    "status" => Status,
+    "upload-pack" => UploadPack
   }
 
   def self.execute(dir, env, argv, stdin, stdout, stderr)
