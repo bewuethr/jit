@@ -14,5 +14,9 @@ class Remotes
     def fetch_specs = @config.get_all(["remote", @name, "fetch"])
 
     def uploader = @config.get(["remote", @name, "uploadpack"])
+
+    def push_specs = @config.get_all(["remote", @name, "push"])
+
+    def receiver = @config.get(["remote", @name, "receivepack"])
   end
 end
