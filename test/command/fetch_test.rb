@@ -60,11 +60,39 @@ class Command::TestFetchSingleBranchInRemoteBase < Command::TestFetchSingleBranc
     EOF
   end
 
+  def test_map_remote_heads_to_local_remotes_origin
+    jit_cmd("fetch")
+
+    assert_equal(@remote.repo.refs.read_ref("refs/heads/main"),
+      repo.refs.read_ref("refs/remotes/origin/main"))
+  end
+
   def test_map_remote_heads_to_different_local_ref
     jit_cmd("fetch", "origin", "refs/heads/*:refs/remotes/other/prefix-*")
 
     assert_equal(@remote.repo.refs.read_ref("refs/heads/main"),
       repo.refs.read_ref("refs/remotes/other/prefix-main"))
+  end
+
+  def test_accept_shorthand_refs_in_fetch_refspec
+    jit_cmd("fetch", "origin", "main:topic")
+
+    assert_equal(@remote.repo.refs.read_ref("refs/heads/main"),
+      repo.refs.read_ref("refs/heads/topic"))
+  end
+
+  def test_accept_shorthand_head_refs_in_fetch_refspec
+    jit_cmd("fetch", "origin", "main:heads/topic")
+
+    assert_equal(@remote.repo.refs.read_ref("refs/heads/main"),
+      repo.refs.read_ref("refs/heads/topic"))
+  end
+
+  def test_accept_shorthand_remote_refs_in_fetch_refspec
+    jit_cmd("fetch", "origin", "main:remotes/topic")
+
+    assert_equal(@remote.repo.refs.read_ref("refs/heads/main"),
+      repo.refs.read_ref("refs/remotes/topic"))
   end
 
   def test_not_create_other_local_refs
