@@ -15,6 +15,7 @@ class Refs
   SYMREF = /^ref: (.+$)/
 
   InvalidBranch = Class.new(StandardError)
+  StaleValue = Class.new(StandardError)
 
   SymRef = Struct.new(:refs, :path) do
     def read_oid = refs.read_ref(path)
@@ -132,6 +133,16 @@ class Refs
     lockfile.rollback
   end
 
+  def compare_and_swap(name, old_oid, new_oid)
+    path = @pathname.join(name)
+
+    update_ref_file(path, new_oid) do
+      unless old_oid == read_symref(path)
+        raise StaleValue, "value of #{name} changed since last read"
+      end
+    end
+  end
+
   private def delete_parent_directories(path)
     path.dirname.ascend do |dir|
       break if dir == @heads_path
@@ -162,10 +173,24 @@ class Refs
     lockfile = Lockfile.new(path)
 
     lockfile.hold_for_update
-    write_lockfile(lockfile, oid)
+    yield if block_given?
+
+    if oid
+      write_lockfile(lockfile, oid)
+    else
+      begin
+        File.unlink(path)
+      rescue
+        Errno::ENOENT
+      end
+      lockfile.rollback
+    end
   rescue Lockfile::MissingParent
     FileUtils.mkdir_p(path.dirname)
     retry
+  rescue => error
+    lockfile.rollback
+    raise error
   end
 
   private def read_symref(path)
