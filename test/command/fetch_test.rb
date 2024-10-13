@@ -7,6 +7,8 @@ require_relative "../remote_repo"
 
 require "rev_list"
 
+ENV["NO_PROGRESS"] = "1"
+
 class Command::TestFetch < Minitest::Test
   include CommandHelper
 
