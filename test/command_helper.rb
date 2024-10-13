@@ -79,14 +79,18 @@ module CommandHelper
 
   def assert_status(status) = assert_equal(status, @cmd.status)
 
-  def assert_stdout(message) = assert_output(@stdout, message)
+  def read_status = @cmd.status
 
-  def assert_stderr(message) = assert_output(@stderr, message)
+  def assert_stdout(message) = assert_equal(message, read_stream(@stdout))
 
-  def assert_output(stream, message)
+  def assert_stderr(message) = assert_equal(message, read_stream(@stderr))
+
+  def read_stream(stream)
     stream.rewind
-    assert_equal(message, stream.read)
+    stream.read
   end
+
+  def read_stderr = read_stream(@stderr)
 
   def resolve_revision(expression) = Revision.new(repo, expression).resolve
 
@@ -101,7 +105,7 @@ module CommandHelper
     assert_equal(contents, files)
   end
 
-  def assert_workspace(contents)
+  def assert_workspace(contents, repo = self.repo)
     files = {}
 
     repo.workspace.list_files.sort.each do |pathname|
