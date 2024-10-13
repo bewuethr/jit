@@ -11,7 +11,11 @@ class Command::TestPush < Minitest::Test
   include CommandHelper
 
   def create_remote_repo(name)
-    RemoteRepo.new(name).tap { _1.jit_cmd("init", _1.repo_path.to_s) }
+    RemoteRepo.new(name).tap do |repo|
+      repo.jit_cmd("init", repo.repo_path.to_s)
+      repo.jit_cmd("config", "receive.denyCurrentBranch", "false")
+      repo.jit_cmd("config", "receive.denyDeleteCurrent", "false")
+    end
   end
 
   def write_commit(message)
@@ -184,6 +188,28 @@ class Command::TestPushSingleBranchLocalWhenLocalIsAhead < Command::TestPushSing
          #{@remote_head}..#{@local_head} main -> main
     EOF
   end
+
+  def test_succeed_when_remote_denies_fast_forward
+    jit_cmd("config", "receive.denyNonFastForwards", "true")
+
+    jit_cmd("push", "origin", "main")
+    assert_status(0)
+
+    assert_stderr <<~EOF
+      To file://#{@remote.repo_path}
+         #{@remote_head}..#{@local_head} main -> main
+    EOF
+  end
+
+  def test_reject_push_to_invalid_refname
+    jit_cmd("push", "origin", "main:refs/heads/../a")
+    assert_status(1)
+
+    assert_stderr <<~EOF
+      To file://#{@remote.repo_path}
+       ! [rejected] main -> ../a (funny refname)
+    EOF
+  end
 end
 
 class Command::TestPushSingleBranchLocalWhenRemoteHasDivergedBase < Command::TestPushSingleBranchLocalBase
@@ -262,6 +288,118 @@ class Command::TestPushIfPushIsNotForced < Command::TestPushSingleBranchLocalWhe
   def test_doest_not_update_local_origin_ref
     refute_equal(@remote_head, @local_head)
     assert_equal(@local_head, commits(repo, ["origin/main"]).first)
+  end
+end
+
+class Command::TestPushRemoteDeniesNonFastForward < Command::TestPushSingleBranchLocalWhenRemoteHasDivergedBase
+  def setup
+    super
+
+    @remote.jit_cmd("config", "receive.denyNonFastForwards", "true")
+    jit_cmd("fetch")
+  end
+
+  def test_reject_pushed_update
+    jit_cmd("push", "origin", "main", "-f")
+    assert_status(1)
+
+    assert_stderr <<~EOF
+      To file://#{@remote.repo_path}
+       ! [rejected] main -> main (non-fast-forward)
+    EOF
+  end
+end
+
+class Command::TestPushRemoteDeniesUpdatingCurrentBranch < Command::TestPushSingleBranchLocalBase
+  def setup
+    super
+
+    @remote.jit_cmd("config", "--unset", "receive.denyCurrentBranch")
+  end
+
+  def test_reject_pushed_update
+    jit_cmd("push", "origin", "main")
+    assert_status(1)
+
+    assert_stderr <<~EOF
+      To file://#{@remote.repo_path}
+       ! [rejected] main -> main (branch is currently checked out)
+    EOF
+  end
+
+  def test_do_not_update_remote_refs
+    jit_cmd("push", "origin", "main")
+
+    refute_nil(repo.refs.read_ref("refs/heads/main"))
+    assert_nil(@remote.repo.refs.read_ref("refs/heads/main"))
+  end
+
+  def test_do_not_udpate_local_remote_ref
+    jit_cmd("push", "origin", "main")
+
+    assert_nil(@remote.repo.refs.read_ref("refs/remotes/origin/main"))
+  end
+end
+
+class Command::TestPushRemoteDeniesDeletingCurrentBranch < Command::TestPushSingleBranchLocalBase
+  def setup
+    super
+
+    jit_cmd("push", "origin", "main")
+    @remote.jit_cmd("config", "--unset", "receive.denyDeleteCurrent")
+  end
+
+  def test_reject_pushed_update
+    jit_cmd("push", "origin", ":main")
+    assert_status(1)
+
+    assert_stderr <<~EOF
+      To file://#{@remote.repo_path}
+       ! [rejected] main (deletion of the current branch prohibited)
+    EOF
+  end
+
+  def test_do_not_delete_remote_refs
+    jit_cmd("push", "origin", ":main")
+
+    refute_nil(@remote.repo.refs.read_ref("refs/heads/main"))
+  end
+
+  def test_do_not_udpate_local_remote_ref
+    jit_cmd("push", "origin", ":main")
+
+    refute_nil(repo.refs.read_ref("refs/remotes/origin/main"))
+  end
+end
+
+class Command::TestPushRemoteDeniesDeletingAnytBranch < Command::TestPushSingleBranchLocalBase
+  def setup
+    super
+
+    jit_cmd("push", "origin", "main")
+    @remote.jit_cmd("config", "receive.denyDeletes", "true")
+  end
+
+  def test_reject_pushed_update
+    jit_cmd("push", "origin", ":main")
+    assert_status(1)
+
+    assert_stderr <<~EOF
+      To file://#{@remote.repo_path}
+       ! [rejected] main (deletion prohibited)
+    EOF
+  end
+
+  def test_do_not_delete_remote_refs
+    jit_cmd("push", "origin", ":main")
+
+    refute_nil(@remote.repo.refs.read_ref("refs/heads/main"))
+  end
+
+  def test_do_not_udpate_local_remote_ref
+    jit_cmd("push", "origin", ":main")
+
+    refute_nil(repo.refs.read_ref("refs/remotes/origin/main"))
   end
 end
 
