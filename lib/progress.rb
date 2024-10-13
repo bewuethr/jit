@@ -37,7 +37,7 @@ class Progress
     @total = @count
 
     clear_line
-    @outputs.puts(status_line)
+    @output.puts(status_line)
     @message = nil
   end
 
