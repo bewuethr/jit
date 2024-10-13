@@ -7,7 +7,7 @@ module Command
       @parser.on("--global") { @options[:file] = :global }
       @parser.on("--system") { @options[:file] = :system }
 
-      @parser.on("-f <config-file>", "--file=<config-file>") { options[:file] = _1 }
+      @parser.on("-f <config-file>", "--file=<config-file>") { @options[:file] = _1 }
 
       @parser.on("--add <name>") { @options[:add] = _1 }
       @parser.on("--replace-all <name>") { @options[:replace] = _1 }
