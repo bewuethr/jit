@@ -18,6 +18,9 @@ module Pack
     "blob" => BLOB
   }
 
+  MAX_COPY_SIZE = 0xffffff
+  MAX_INSERT_SIZE = 0x7f
+
   InvalidPack = Class.new(StandardError)
 
   Record = Struct.new(:type, :data) do
