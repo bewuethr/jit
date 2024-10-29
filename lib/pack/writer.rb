@@ -67,7 +67,7 @@ module Pack
     private def write_entry(entry)
       object = @database.load_raw(entry.oid)
 
-      header = Numbers::VarIntLE.write(object.size)
+      header = Numbers::VarIntLE.write(object.size, 4)
       header[0] |= entry.type << 4
 
       write(header.pack("C*"))

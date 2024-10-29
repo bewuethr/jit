@@ -1,10 +1,9 @@
 module Pack
   module Numbers
     module VarIntLE
-      def self.write(value)
+      def self.write(value, shift)
         bytes = []
-        mask = 0xf
-        shift = 4
+        mask = 2**shift - 1
 
         until value <= mask
           bytes << (0x80 | value & mask)
@@ -16,10 +15,9 @@ module Pack
         bytes + [value]
       end
 
-      def self.read(input)
+      def self.read(input, shift)
         first = input.readbyte
-        value = first & 0xf
-        shift = 4
+        value = first & (2**shift - 1)
 
         byte = first
 
@@ -30,6 +28,33 @@ module Pack
         end
 
         [first, value]
+      end
+    end
+
+    module PackedInt56LE
+      def self.write(value)
+        bytes = [0]
+
+        (0...7).each do |i|
+          byte = (value >> (8 * i)) & 0xff
+          next if byte == 0
+
+          bytes[0] |= 1 << i
+          bytes.push(byte)
+        end
+
+        bytes
+      end
+
+      def self.read(input, header)
+        value = 0
+
+        (0...7).each do |i|
+          next if header & (1 << i) == 0
+          value |= input.readbyte << (8 * i)
+        end
+
+        value
       end
     end
   end

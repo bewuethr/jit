@@ -26,7 +26,7 @@ module Pack
     end
 
     private def read_record_header
-      byte, size = Numbers::VarIntLE.read(@input)
+      byte, size = Numbers::VarIntLE.read(@input, 4)
       type = (byte >> 4) & 0x7
 
       [type, size]
