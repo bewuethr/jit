@@ -20,6 +20,7 @@ module Pack
 
   MAX_COPY_SIZE = 0xffffff
   MAX_INSERT_SIZE = 0x7f
+  GIT_MAX_COPY = 0x10000
 
   InvalidPack = Class.new(StandardError)
 
