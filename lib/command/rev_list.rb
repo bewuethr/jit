@@ -18,7 +18,9 @@ module Command
       rev_list = ::RevList.new(repo, @args, @options)
       iterator = @options[:reverse] ? :reverse_each : :each
 
-      rev_list.__send__(iterator) { puts _1.oid }
+      rev_list.__send__(iterator) do |object, path|
+        puts "#{object.oid} #{path}".strip
+      end
 
       exit 0
     end
