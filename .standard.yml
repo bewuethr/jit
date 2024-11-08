@@ -1,4 +1,4 @@
-ruby_version: 3.3.5
+ruby_version: 3.3.6
 ignore:
   - test/command/checkout_test.rb:
       - Style/RedundantStringEscape
