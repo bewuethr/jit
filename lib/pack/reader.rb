@@ -22,7 +22,13 @@ module Pack
 
     def read_record
       type, _ = read_record_header
-      Record.new(TYPE_CODES.key(type), read_zlib_stream)
+
+      case type
+      when COMMIT, TREE, BLOB
+        Record.new(TYPE_CODES.key(type), read_zlib_stream)
+      when REF_DELTA
+        read_ref_delta
+      end
     end
 
     private def read_record_header
@@ -46,6 +52,11 @@ module Pack
       @input.seek(stream.total_in - total, IO::SEEK_CUR)
 
       string
+    end
+
+    private def read_ref_delta
+      base_oid = @input.read(20).unpack1("H40")
+      RefDelta.new(base_oid, read_zlib_stream)
     end
   end
 end

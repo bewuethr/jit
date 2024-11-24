@@ -47,6 +47,11 @@ class Database
     Raw.new(type, size, scanner.rest)
   end
 
+  def load_info(oid)
+    type, size, _ = read_object_header(oid, 128)
+    Raw.new(type, size)
+  end
+
   def prefix_match(name)
     dirname = object_path(name).dirname
 
@@ -134,7 +139,7 @@ class Database
 
   private def read_object_header(oid, read_bytes = nil)
     path = object_path(oid)
-    data = Zlib::Inflate.inflate(File.read(path, read_bytes))
+    data = Zlib::Inflate.new.inflate(File.read(path, read_bytes))
     scanner = StringScanner.new(data)
 
     type = scanner.scan_until(/ /).strip

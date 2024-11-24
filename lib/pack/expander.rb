@@ -16,9 +16,7 @@ module Pack
       @target_size = read_size
     end
 
-    private def read_size = Numbers::VarIntLE.read(@delta, 7)[1]
-
-    private def expand(source)
+    def expand(source)
       check_size(source, @source_size)
       target = ""
 
@@ -38,6 +36,8 @@ module Pack
       check_size(target, @target_size)
       target
     end
+
+    private def read_size = Numbers::VarIntLE.read(@delta, 7)[1]
 
     private def check_size(buffer, size)
       raise "failed to apply delta" unless buffer.bytesize == size

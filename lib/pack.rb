@@ -1,6 +1,7 @@
 require_relative "pack/reader"
 require_relative "pack/stream"
 require_relative "pack/writer"
+require_relative "pack/unpacker"
 
 module Pack
   HEADER_SIZE = 12
@@ -11,6 +12,8 @@ module Pack
   COMMIT = 1
   TREE = 2
   BLOB = 3
+
+  REF_DELTA = 7
 
   TYPE_CODES = {
     "commit" => COMMIT,
@@ -29,4 +32,6 @@ module Pack
 
     def to_s = data
   end
+
+  RefDelta = Struct.new(:base_oid, :delta_data)
 end
