@@ -5,7 +5,7 @@ require_relative "../../diff"
 module Command
   module PrintDiff
     NULL_OID = "0" * 40
-    NULL_PATH = "/dev/null"
+    NULL_PATH = File::NULL
 
     DIFF_FORMATS = {
       context: :normal,

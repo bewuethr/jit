@@ -47,7 +47,7 @@ module Pack
         data = @input.read_nonblock(256)
         total += data.bytesize
 
-        string.concat(stream.inflate(data))
+        string += stream.inflate(data)
       end
       @input.seek(stream.total_in - total, IO::SEEK_CUR)
 

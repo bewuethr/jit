@@ -64,8 +64,8 @@ module Command
       ref = repo.refs.current_ref
       info = ref.head? ? "detached HEAD" : ref.short_name
       oid = repo.database.short_oid(commit.oid)
-      info.concat(" (root-commit)") unless commit.parent
-      info.concat(" #{oid}")
+      info += " (root-commit)" unless commit.parent
+      info += " #{oid}"
 
       puts "[#{info}] #{commit.title_line}"
     end

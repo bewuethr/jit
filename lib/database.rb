@@ -94,7 +94,7 @@ class Database
   def has?(oid) = File.file?(object_path(oid))
 
   private def serialize_object(object)
-    string = object.to_s.force_encoding(Encoding::ASCII_8BIT)
+    string = object.to_s.b
     "#{object.type} #{string.bytesize}\0#{string}"
   end
 

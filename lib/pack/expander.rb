@@ -25,11 +25,11 @@ module Pack
 
         if byte < 0x80
           insert = Delta::Insert.parse(@delta, byte)
-          target.concat(insert.data)
+          target += insert.data
         else
           copy = Delta::Copy.parse(@delta, byte)
           size = (copy.size == 0) ? GIT_MAX_COPY : copy.size
-          target.concat(source.byteslice(copy.offset, size))
+          target += source.byteslice(copy.offset, size)
         end
       end
 
