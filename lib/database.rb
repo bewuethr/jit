@@ -92,6 +92,8 @@ class Database
 
   def has?(oid) = File.file?(object_path(oid))
 
+  def pack_path = @pathname.join("pack")
+
   private def serialize_object(object)
     string = object.to_s.b
     "#{object.type} #{string.bytesize}\0#{string}"

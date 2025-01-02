@@ -131,6 +131,18 @@ class Command::TestFetchSingleBranchInRemoteBase < Command::TestFetchSingleBranc
   end
 end
 
+class Command::TestFetchUnpackLimitSet < Command::TestFetchSingleBranchInRemote
+  def setup
+    super
+    jit_cmd("config", "fetch.unpackLimit", "5")
+  end
+
+  def test_keep_pack_on_disk_with_index
+    jit_cmd("fetch")
+    assert_object_count(2)
+  end
+end
+
 class Command::TestFetchSingleBranchInRemoteRemoteAhead < Command::TestFetchSingleBranchInRemote
   def setup
     super

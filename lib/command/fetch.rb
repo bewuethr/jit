@@ -72,7 +72,10 @@ module Command
       @conn.recv_until(Pack::SIGNATURE) {}
     end
 
-    private def recv_objects = recv_packed_objects(Pack::SIGNATURE)
+    private def recv_objects
+      unpack_limit = repo.config.get(["fetch", "unpackLimit"])
+      recv_packed_objects(unpack_limit, Pack::SIGNATURE)
+    end
 
     private def update_remote_refs
       @stderr.puts "From #{@fetch_url}"
