@@ -10,17 +10,19 @@ module Merge
 
     Conflict = Struct.new(:o_lines, :a_lines, :b_lines) do
       def to_s(a_name = nil, b_name = nil)
-        text = separator("", "<", a_name)
-        a_lines.each { text += it }
-        text = separator(text, "=")
-        b_lines.each { text += it }
+        text = +""
+        separator(text, "<", a_name)
+        a_lines.each { text.concat(it) }
+        separator(text, "=")
+        b_lines.each { text.concat(it) }
         separator(text, ">", b_name)
+        text
       end
 
       def separator(text, char, name = nil)
-        new_text = char * 7
-        new_text += " #{name}" if name
-        text + new_text + "\n"
+        text.concat(char * 7)
+        text.concat(" #{name}") if name
+        text.concat("\n")
       end
     end
 
