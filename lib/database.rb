@@ -1,16 +1,16 @@
 require "digest/sha1"
+require "forwardable"
 require "pathname"
 require "strscan"
-require "zlib"
 
 require_relative "database/author"
 require_relative "database/blob"
 require_relative "database/commit"
 require_relative "database/entry"
+require_relative "database/loose"
 require_relative "database/tree"
 require_relative "database/tree_diff"
 require_relative "path_filter"
-require_relative "temp_file"
 
 class Database
   TYPES = {
@@ -21,16 +21,20 @@ class Database
 
   Raw = Struct.new(:type, :size, :data)
 
+  extend Forwardable
+  def_delegators :@backend, :has?, :load_info, :load_raw, :prefix_match
+
   def initialize(pathname)
     @pathname = pathname
     @objects = {}
+    @backend = Loose.new(pathname)
   end
 
   def store(object)
     content = serialize_object(object)
     object.oid = hash_content(content)
 
-    write_object(object.oid, content)
+    @backend.write_object(object.oid, content)
   end
 
   def hash_object(object) = hash_content(serialize_object(object))
@@ -40,28 +44,6 @@ class Database
   def tree_entry(oid) = Entry.new(oid, Tree::TREE_MODE)
 
   def load(oid) = @objects[oid] ||= read_object(oid)
-
-  def load_raw(oid)
-    type, size, scanner = read_object_header(oid)
-    Raw.new(type, size, scanner.rest)
-  end
-
-  def load_info(oid)
-    type, size, _ = read_object_header(oid, 128)
-    Raw.new(type, size)
-  end
-
-  def prefix_match(name)
-    dirname = object_path(name).dirname
-
-    oids = Dir.entries(dirname).map do |filename|
-      "#{dirname.basename}#{filename}"
-    end
-
-    oids.select { |oid| oid.start_with?(name) }
-  rescue Errno::ENOENT
-    []
-  end
 
   def tree_diff(a, b, filter = PathFilter.new)
     diff = TreeDiff.new(self)
@@ -90,8 +72,6 @@ class Database
     list
   end
 
-  def has?(oid) = File.file?(object_path(oid))
-
   def pack_path = @pathname.join("pack")
 
   private def serialize_object(object)
@@ -101,21 +81,13 @@ class Database
 
   private def hash_content(string) = Digest::SHA1.hexdigest(string)
 
-  private def write_object(oid, content)
-    path = object_path(oid)
-    return if File.exist?(path)
-
-    file = TempFile.new(path.dirname, "tmp_obj")
-    file.write(Zlib::Deflate.deflate(content, Zlib::BEST_SPEED))
-    file.move(path.basename)
-  end
-
   private def object_path(oid) = @pathname.join(oid[0..1], oid[2..])
 
   private def read_object(oid)
-    type, _, scanner = read_object_header(oid)
+    raw = load_raw(oid)
+    scanner = StringScanner.new(raw.data)
 
-    object = TYPES[type].parse(scanner)
+    object = TYPES[raw.type].parse(scanner)
     object.oid = oid
 
     object
