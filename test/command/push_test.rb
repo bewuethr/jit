@@ -525,3 +525,37 @@ class Command::TestPushMultipleWhenSpecificBranchIsPushed < Command::TestPushMul
     assert_equal(local_commits, commits(@remote.repo, [], all: true))
   end
 end
+
+class Command::TestPushMultipleWhenReceiverHasStoredPack < Command::TestPushMultipleBranchesLocalBase
+  def setup
+    super
+
+    @alice = create_remote_repo("push-remote-alice")
+    @bob = create_remote_repo("push-remote-bob")
+
+    @alice.jit_cmd("config", "receive.unpackLimit", "5")
+
+    %w[one dir/two three].each { write_commit(it) }
+
+    jit_cmd("remote", "add", "alice", "file://#{@alice.repo_path}")
+    jit_cmd("config", "remote.alice.receivepack", "#{jit_path} receive-pack")
+
+    jit_cmd("push", "alice", "refs/heads/*")
+  end
+
+  def teardown
+    super
+
+    FileUtils.rm_rf(@alice.repo_path)
+    FileUtils.rm_rf(@bob.repo_path)
+  end
+
+  def test_push_packed_objects_to_other_repository
+    @alice.jit_cmd("remote", "add", "bob", "file://#{@bob.repo_path}")
+    @alice.jit_cmd("config", "remote.bob.receivepack", "#{jit_path} receive-pack")
+
+    @alice.jit_cmd("push", "bob", "refs/heads/*")
+
+    assert_equal(commits(repo, ["main"]), commits(@bob.repo, ["main"]))
+  end
+end

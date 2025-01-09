@@ -1,7 +1,7 @@
 require "strscan"
 require "zlib"
 
-require_relative "../temp_file.rb"
+require_relative "../temp_file"
 
 class Database
   class Loose

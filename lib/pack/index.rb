@@ -62,7 +62,7 @@ module Pack
       binary_search(packed, low, high)
     end
 
-    private def offset_for(layerk, pos)
+    private def offset_for(layer, pos)
       offset = HEADER_SIZE + FANOUT_SIZE
       count = @fanout.last
 

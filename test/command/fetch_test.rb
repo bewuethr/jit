@@ -141,6 +141,13 @@ class Command::TestFetchUnpackLimitSet < Command::TestFetchSingleBranchInRemote
     jit_cmd("fetch")
     assert_object_count(2)
   end
+
+  def test_load_commit_from_stored_pack
+    jit_cmd("fetch")
+
+    assert_equal(commits(@remote.repo, ["main"]),
+      commits(repo, ["origin/main"]))
+  end
 end
 
 class Command::TestFetchSingleBranchInRemoteRemoteAhead < Command::TestFetchSingleBranchInRemote

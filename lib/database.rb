@@ -4,10 +4,10 @@ require "pathname"
 require "strscan"
 
 require_relative "database/author"
+require_relative "database/backends"
 require_relative "database/blob"
 require_relative "database/commit"
 require_relative "database/entry"
-require_relative "database/loose"
 require_relative "database/tree"
 require_relative "database/tree_diff"
 require_relative "path_filter"
@@ -22,12 +22,12 @@ class Database
   Raw = Struct.new(:type, :size, :data)
 
   extend Forwardable
-  def_delegators :@backend, :has?, :load_info, :load_raw, :prefix_match
+  def_delegators :@backend, :has?, :load_info, :load_raw,
+    :prefix_match, :pack_path, :reload
 
   def initialize(pathname)
-    @pathname = pathname
     @objects = {}
-    @backend = Loose.new(pathname)
+    @backend = Backends.new(pathname)
   end
 
   def store(object)
@@ -71,8 +71,6 @@ class Database
     build_list(list, entry, pathname || Pathname.new(""))
     list
   end
-
-  def pack_path = @pathname.join("pack")
 
   private def serialize_object(object)
     string = object.to_s.b
