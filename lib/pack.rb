@@ -1,8 +1,9 @@
+require_relative "pack/index"
+require_relative "pack/indexer"
 require_relative "pack/reader"
 require_relative "pack/stream"
-require_relative "pack/writer"
-require_relative "pack/indexer"
 require_relative "pack/unpacker"
+require_relative "pack/writer"
 
 module Pack
   HEADER_SIZE = 12
