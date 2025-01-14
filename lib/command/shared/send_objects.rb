@@ -13,6 +13,7 @@ module Command
 
       write_opts = {
         compression: pack_compression,
+        allow_ofs: @conn.capable?("ofs-delta"),
         progress: Progress.new(@stderr)
       }
       writer = Pack::Writer.new(@conn.output, repo.database, write_opts)

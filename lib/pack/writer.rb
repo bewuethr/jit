@@ -14,6 +14,7 @@ module Pack
       @offset = 0
 
       @compression = options.fetch(:compression, Zlib::DEFAULT_COMPRESSION)
+      @allow_ofs = options[:allow_ofs]
       @progress = options[:progress]
     end
 
@@ -44,7 +45,7 @@ module Pack
 
     private def add_to_pack_list(object, path)
       info = @database.load_info(object.oid)
-      @pack_list.push(Entry.new(object.oid, info, path))
+      @pack_list.push(Entry.new(object.oid, info, path, @allow_ofs))
     end
 
     private def write_header
