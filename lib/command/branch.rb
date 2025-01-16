@@ -4,6 +4,9 @@ require_relative "../revision"
 module Command
   class Branch < Base
     def define_options
+      @parser.on("-a", "--all") { @options[:all] = true }
+      @parser.on("-r", "--remotes") { @options[:remotes] = true }
+
       @parser.on("-v", "--verbose") { @options[:verbose] = true }
 
       @parser.on("-d", "--delete") { @options[:delete] = true }
@@ -44,8 +47,8 @@ module Command
 
     private def list_branches
       current = repo.refs.current_ref
-      branches = repo.refs.list_branches.sort_by(&:path)
-      max_width = branches.map { |b| b.short_name.size }.max
+      branches = branch_refs.sort_by(&:path)
+      max_width = branches.map { it.short_name.size }.max
 
       setup_pager
 
@@ -54,6 +57,16 @@ module Command
         info.concat(extended_branch_info(ref, max_width))
         puts info
       end
+    end
+
+    private def branch_refs
+      branches = repo.refs.list_branches
+      remotes = repo.refs.list_remotes
+
+      return branches + remotes if @options[:all]
+      return remotes if @options[:remotes]
+
+      branches
     end
 
     private def create_branch
@@ -83,6 +96,8 @@ module Command
     private def format_ref(ref, current)
       if ref == current
         "* #{fmt :green, ref.short_name}"
+      elsif ref.remote?
+        "  #{fmt :red, ref.short_name}"
       else
         "  #{ref.short_name}"
       end
