@@ -7,6 +7,11 @@ module Command
     include PrintDiff
 
     private def define_options
+      @rev_list_opts = {}
+      @parser.on("--all") { @rev_list_opts[:all] = true }
+      @parser.on("--branches") { @rev_list_opts[:branches] = true }
+      @parser.on("--remotes") { @rev_list_opts[:remotes] = true }
+
       @options[:patch] = false
       define_print_diff_options
 
@@ -46,8 +51,8 @@ module Command
       @reverse_refs = repo.refs.reverse_refs
       @current_ref = repo.refs.current_ref
 
-      @rev_list = ::RevList.new(repo, @args)
-      @rev_list.each { |commit| show_commit(commit) }
+      @rev_list = ::RevList.new(repo, @args, @rev_list_opts)
+      @rev_list.each { show_commit(it) }
 
       exit 0
     end
@@ -155,7 +160,9 @@ module Command
     end
 
     private def ref_color(ref)
-      ref.head? ? [:bold, :cyan] : [:bold, :green]
+      return [:bold, :cyan] if ref.head?
+      return [:bold, :green] if ref.branch?
+      [:bold, :red] if ref.remote?
     end
   end
 end

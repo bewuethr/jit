@@ -22,6 +22,10 @@ class Refs
 
     def head? = path == HEAD
 
+    def branch? = path.start_with?("refs/heads/")
+
+    def remote? = path.start_with?("refs/remotes/")
+
     def short_name = refs.short_name(path)
   end
 
@@ -104,6 +108,8 @@ class Refs
   end
 
   def list_branches = list_refs(@heads_path)
+
+  def list_remotes = list_refs(@remotes_path)
 
   def short_name(path)
     path = @pathname.join(path)
