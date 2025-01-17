@@ -122,6 +122,13 @@ class Refs
     path.to_s
   end
 
+  def long_name(ref)
+    path = path_for_name(ref)
+    return path.relative_path_from(@pathname).to_s if path
+
+    raise InvalidBranch, "the requested branch '#{ref}' does not exist"
+  end
+
   def delete_branch(branch_name)
     path = @heads_path.join(branch_name)
 
