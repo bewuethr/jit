@@ -5,16 +5,20 @@ require_relative "../command_helper"
 class Command::TestBranch < Minitest::Test
   include CommandHelper
 
+  def write_commit(message)
+    write_file("file.txt", message)
+    jit_cmd("add", ".")
+    commit(message)
+  end
+
   def setup
     super
 
-    ["first", "second", "third"].each do |message|
-      write_file("file.txt", message)
-      jit_cmd("add", ".")
-      commit(message)
-    end
+    %w[first second third].each { write_commit(it) }
   end
+end
 
+class Command::TestBranchWithChainOfCommits < Command::TestBranch
   def test_create_branch_pointing_at_head
     jit_cmd("branch", "feature")
     assert_equal(repo.refs.read_head, repo.refs.read_ref("feature"))
@@ -152,7 +156,7 @@ class Command::TestBranch < Minitest::Test
     head = repo.refs.read_head
 
     jit_cmd("branch", "bug-fix")
-    jit_cmd("branch", "-D", "bug-fix")
+    jit_cmd("branch", "--delete", "bug-fix")
 
     assert_stdout <<~EOF
       Deleted branch bug-fix (was #{repo.database.short_oid(head)}).
@@ -163,12 +167,57 @@ class Command::TestBranch < Minitest::Test
   end
 
   def test_fail_to_delete_non_existent_branch
-    jit_cmd("branch", "-D", "no-such-branch")
+    jit_cmd("branch", "--delete", "no-such-branch")
 
     assert_status(1)
 
     assert_stderr <<~EOF
       error: branch 'no-such-branch' not found.
+    EOF
+  end
+end
+
+class Command::TestBranchWhenDiverged < Command::TestBranch
+  def setup
+    super
+
+    jit_cmd("branch", "topic")
+    jit_cmd("checkout", "topic")
+
+    write_commit("changed")
+
+    jit_cmd("checkout", "main")
+  end
+
+  def test_delete_merged_branch
+    head = repo.refs.read_head
+
+    jit_cmd("checkout", "topic")
+    jit_cmd("branch", "--delete", "main")
+    assert_status(0)
+
+    assert_stdout <<~EOF
+      Deleted branch main (was #{repo.database.short_oid(head)}).
+    EOF
+  end
+
+  def test_refuse_to_delete_branch
+    jit_cmd("branch", "--delete", "topic")
+    assert_status(1)
+
+    assert_stderr <<~EOF
+      error: The branch 'topic' is not fully merged.
+    EOF
+  end
+
+  def test_delete_branch_with_force
+    head = repo.refs.read_ref("topic")
+
+    jit_cmd("branch", "-D", "topic")
+    assert_status(0)
+
+    assert_stdout <<~EOF
+      Deleted branch topic (was #{repo.database.short_oid(head)}).
     EOF
   end
 end
