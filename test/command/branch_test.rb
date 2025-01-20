@@ -10,7 +10,9 @@ class Command::TestBranch < Minitest::Test
     jit_cmd("add", ".")
     commit(message)
   end
+end
 
+class Command::TestBranchBase < Command::TestBranch
   def setup
     super
 
@@ -18,7 +20,7 @@ class Command::TestBranch < Minitest::Test
   end
 end
 
-class Command::TestBranchWithChainOfCommits < Command::TestBranch
+class Command::TestBranchWithChainOfCommits < Command::TestBranchBase
   def test_create_branch_pointing_at_head
     jit_cmd("branch", "feature")
     assert_equal(repo.refs.read_head, repo.refs.read_ref("feature"))
@@ -177,7 +179,7 @@ class Command::TestBranchWithChainOfCommits < Command::TestBranch
   end
 end
 
-class Command::TestBranchWhenDiverged < Command::TestBranch
+class Command::TestBranchWhenDiverged < Command::TestBranchBase
   def setup
     super
 
@@ -218,6 +220,130 @@ class Command::TestBranchWhenDiverged < Command::TestBranch
 
     assert_stdout <<~EOF
       Deleted branch topic (was #{repo.database.short_oid(head)}).
+    EOF
+  end
+end
+
+class Command::TestBranchTrackingRemotes < Command::TestBranch
+  def setup
+    super
+
+    jit_cmd("remote", "add", "origin", "ssh://example.com/repo")
+    @upstream = "refs/remotes/origin/main"
+
+    %w[first second remote].each { write_commit(it) }
+    repo.refs.update_ref(@upstream, repo.refs.read_head)
+
+    jit_cmd("reset", "--hard", "@^")
+    %w[third local].each { write_commit(it) }
+
+    @head = repo.database.short_oid(repo.refs.read_head)
+    @remote = repo.database.short_oid(repo.refs.read_ref(@upstream))
+  end
+
+  def test_display_no_divergence_for_unlinked_branches
+    jit_cmd("branch", "--verbose")
+
+    assert_stdout <<~EOF
+      * main #{@head} local
+    EOF
+  end
+
+  def test_display_divergence_for_linked_branches
+    jit_cmd("branch", "--set-upstream-to", "origin/main")
+    jit_cmd("branch", "--verbose")
+
+    assert_stdout <<~EOF
+      * main #{@head} [ahead 2, behind 1] local
+    EOF
+  end
+
+  def test_display_branch_ahead_of_its_upstream
+    repo.refs.update_ref(@upstream, resolve_revision("main~2"))
+
+    jit_cmd("branch", "--set-upstream-to", "origin/main")
+    jit_cmd("branch", "--verbose")
+
+    assert_stdout <<~EOF
+      * main #{@head} [ahead 2] local
+    EOF
+  end
+
+  def test_display_branch_behind_its_upstream
+    main = resolve_revision("@~2")
+    oid = repo.database.short_oid(main)
+
+    jit_cmd("reset", main)
+    jit_cmd("branch", "--set-upstream-to", "origin/main")
+    jit_cmd("branch", "--verbose")
+
+    assert_stdout <<~EOF
+      * main #{oid} [behind 1] second
+    EOF
+  end
+
+  def test_display_current_upstream_branch_name
+    jit_cmd("branch", "--set-upstream-to", "origin/main")
+    jit_cmd("branch", "-vv")
+
+    assert_stdout <<~EOF
+      * main #{@head} [origin/main, ahead 2, behind 1] local
+    EOF
+  end
+
+  def test_display_upstream_branch_name_with_no_divergence
+    jit_cmd("reset", "--hard", "origin/main")
+
+    jit_cmd("branch", "--set-upstream-to", "origin/main")
+    jit_cmd("branch", "-vv")
+
+    assert_stdout <<~EOF
+      * main #{@remote} [origin/main] remote
+    EOF
+  end
+
+  def test_fail_if_upstream_ref_does_not_exist
+    jit_cmd("branch", "--set-upstream-to", "origin/nope")
+    assert_status(1)
+
+    assert_stderr <<~EOF
+      error: the requested upstream branch 'origin/nope' does not exist
+    EOF
+  end
+
+  def test_fail_if_upstream_remote_does_not_exist
+    repo.refs.update_ref("refs/remotes/nope/main", repo.refs.read_head)
+
+    jit_cmd("branch", "--set-upstream-to", "nope/main")
+    assert_status(128)
+
+    assert_stderr \
+      "fatal: Cannot setup tracking information; " \
+      "starting point 'refs/remotes/nope/main' is not a branch\n"
+  end
+
+  def test_create_branch_tracking_its_start_point
+    jit_cmd("branch", "--track", "topic", "origin/main")
+    jit_cmd("checkout", "topic")
+
+    write_commit("topic")
+    oid = repo.database.short_oid(repo.refs.read_head)
+
+    jit_cmd("branch", "--verbose")
+
+    assert_stdout <<~EOF
+        main  #{@head} local
+      * topic #{oid} [ahead 1] topic
+    EOF
+  end
+
+  def test_unlink_branch_from_upstream
+    jit_cmd("branch", "--set-upstream-to", "origin/main")
+    jit_cmd("branch", "--unset-upstream")
+    jit_cmd("branch", "--verbose")
+
+    assert_stdout <<~EOF
+      * main #{@head} local
     EOF
   end
 end

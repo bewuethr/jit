@@ -83,6 +83,7 @@ module Command
 
     private def print_long_format
       print_branch_status
+      print_upstream_status
       print_pending_commit_status
 
       print_changes("Changes to be committed", @status.index_changes, :green)
@@ -102,6 +103,33 @@ module Command
         puts "On branch #{current.short_name}"
       end
     end
+
+    private def print_upstream_status
+      divergence = repo.divergence(repo.refs.current_ref)
+      return unless divergence.upstream
+
+      base = repo.refs.short_name(divergence.upstream)
+      ahead = divergence.ahead
+      behind = divergence.behind
+
+      if ahead == 0 && behind == 0
+        puts "Your branch is up to date with '#{base}'."
+      elsif behind == 0
+        puts "Your branch is ahead of '#{base}' by #{commits ahead}."
+      elsif ahead == 0
+        puts "Your branch is behind '#{base}' by #{commits behind}, " \
+          "and can be fast-forwarded."
+      else
+        puts <<~EOF
+          Your branch and '#{base}' have diverged,
+          and have #{ahead} and #{behind} different commits each, respectively.
+        EOF
+      end
+
+      puts ""
+    end
+
+    private def commits(n) = (n == 1) ? "1 commit" : "#{n} commits"
 
     private def print_pending_commit_status
       case repo.pending_commit.merge_type

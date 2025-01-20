@@ -10,7 +10,8 @@ module Command
       @parser.on("-a", "--all") { @options[:all] = true }
       @parser.on("-r", "--remotes") { @options[:remotes] = true }
 
-      @parser.on("-v", "--verbose") { @options[:verbose] = true }
+      @options[:verbose] = 0
+      @parser.on("-v", "--verbose") { @options[:verbose] += 1 }
 
       @parser.on("-d", "--delete") { @options[:delete] = true }
       @parser.on("-f", "--force") { @options[:force] = true }
@@ -140,13 +141,14 @@ module Command
     end
 
     private def extended_branch_info(ref, max_width)
-      return "" unless @options[:verbose]
+      return "" unless @options[:verbose] > 0
 
       commit = repo.database.load(ref.read_oid)
       short = repo.database.short_oid(commit.oid)
       space = " " * (max_width - ref.short_name.length)
+      upstream = upstream_info(ref)
 
-      "#{space} #{short} #{commit.title_line}"
+      "#{space} #{short}#{upstream} #{commit.title_line}"
     end
 
     private def set_upstream(branch_name, upstream)
@@ -163,6 +165,23 @@ module Command
     rescue Remotes::InvalidBranch => error
       @stderr.puts "fatal: #{error.message}"
       exit 128
+    end
+
+    private def upstream_info(ref)
+      divergence = repo.divergence(ref)
+      return "" unless divergence.upstream
+
+      ahead = divergence.ahead
+      behind = divergence.behind
+      info = []
+
+      if @options[:verbose] > 1
+        info.push(fmt(:blue, repo.refs.short_name(divergence.upstream)))
+      end
+      info.push("ahead #{ahead}") if ahead > 0
+      info.push("behind #{behind}") if behind > 0
+
+      info.empty? ? "" : " [#{info.join(", ")}]"
     end
   end
 end

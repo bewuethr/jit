@@ -126,7 +126,8 @@ class Refs
     path = path_for_name(ref)
     return path.relative_path_from(@pathname).to_s if path
 
-    raise InvalidBranch, "the requested branch '#{ref}' does not exist"
+    raise InvalidBranch,
+      "the requested upstream branch '#{ref}' does not exist"
   end
 
   def delete_branch(branch_name)
