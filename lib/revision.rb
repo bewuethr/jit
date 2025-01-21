@@ -19,6 +19,13 @@ class Revision
 
   HintedError = Struct.new(:message, :hint)
 
+  Upstream = Struct.new(:rev) do
+    def resolve(context)
+      name = context.upstream(rev.name)
+      context.read_ref(name)
+    end
+  end
+
   INVALID_NAME = /
       ^\.
     | \/\.
@@ -32,12 +39,14 @@ class Revision
 
   PARENT = /^(.+)\^(\d*)$/
   ANCESTOR = /^(.+)~(\d+)$/
+  UPSTREAM = /^(.*)@\{u(pstream)?\}$/i
 
   COMMIT = "commit"
   HEAD = "HEAD"
 
   REF_ALIASES = {
-    "@" => HEAD
+    "@" => HEAD,
+    "" => HEAD
   }
 
   attr_reader :errors
@@ -57,6 +66,9 @@ class Revision
     elsif (match = ANCESTOR.match(revision))
       rev = Revision.parse(match[1])
       rev ? Ancestor.new(rev, match[2].to_i) : nil
+    elsif (match = UPSTREAM.match(revision))
+      rev = Revision.parse(match[1])
+      rev ? Upstream.new(rev) : nil
     elsif Revision.valid_ref?(revision)
       name = REF_ALIASES[revision] || revision
       Ref.new(name)
@@ -95,6 +107,11 @@ class Revision
     end
 
     nil
+  end
+
+  def upstream(branch)
+    branch = @repo.refs.current_ref.short_name if branch == HEAD
+    @repo.remotes.get_upstream(branch)
   end
 
   private def load_typed_object(oid, type)

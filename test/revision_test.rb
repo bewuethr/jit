@@ -60,4 +60,29 @@ class TestRevision < Minitest::Test
       )
     )
   end
+
+  def test_parse_upstream
+    assert_parse("main@{uPsTrEaM}", Revision::Upstream.new(Revision::Ref.new("main")))
+  end
+
+  def test_parse_shorthand_upstream
+    assert_parse("main@{u}", Revision::Upstream.new(Revision::Ref.new("main")))
+  end
+
+  def test_parse_upstream_with_no_branch
+    assert_parse("@{u}", Revision::Upstream.new(Revision::Ref.new("HEAD")))
+  end
+
+  def test_parse_upstream_with_ancestor_operators
+    assert_parse(
+      "main@{u}^~3",
+      Revision::Ancestor.new(
+        Revision::Parent.new(
+          Revision::Upstream.new(Revision::Ref.new("main")),
+          1
+        ),
+        3
+      )
+    )
+  end
 end

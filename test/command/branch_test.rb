@@ -346,4 +346,12 @@ class Command::TestBranchTrackingRemotes < Command::TestBranch
       * main #{@head} local
     EOF
   end
+
+  def test_resolve_upstream_revision
+    jit_cmd("branch", "--set-upstream-to", "origin/main")
+
+    refute_equal(resolve_revision("origin/main"), resolve_revision("main"))
+    assert_equal(resolve_revision("origin/main"), resolve_revision("@{U}"))
+    assert_equal(resolve_revision("origin/main"), resolve_revision("main@{upstream}"))
+  end
 end
