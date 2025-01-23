@@ -374,7 +374,7 @@ class Command::TestPushRemoteDeniesDeletingCurrentBranch < Command::TestPushSing
   end
 end
 
-class Command::TestPushRemoteDeniesDeletingAnytBranch < Command::TestPushSingleBranchLocalBase
+class Command::TestPushRemoteDeniesDeletingAnyBranch < Command::TestPushSingleBranchLocalBase
   def setup
     super
 
@@ -402,6 +402,44 @@ class Command::TestPushRemoteDeniesDeletingAnytBranch < Command::TestPushSingleB
     jit_cmd("push", "origin", ":main")
 
     refute_nil(repo.refs.read_ref("refs/remotes/origin/main"))
+  end
+end
+
+class Command::TestPushWithConfiguredUpstream < Command::TestPush
+  def setup
+    super
+
+    @remote = create_remote_repo("push-remote")
+
+    jit_cmd("remote", "add", "origin", "file://#{@remote.repo_path}")
+    jit_cmd("config", "remote.origin.receivepack", "#{jit_path} receive-pack")
+
+    %w[one dir/two].each { write_commit(it) }
+    jit_cmd("push", "origin", "main")
+    write_commit("three")
+
+    jit_cmd("branch", "--set-upstream-to", "origin/main")
+  end
+
+  def teardown
+    super
+
+    FileUtils.rm_rf(@remote.repo_path)
+  end
+
+  def test_push_current_branch_to_upstream
+    jit_cmd("push")
+    assert_status(0)
+
+    new_oid, old_oid = commits(repo, ["main"])
+
+    assert_stderr <<~EOF
+      To file://#{@remote.repo_path}
+         #{old_oid}..#{new_oid} main -> main
+    EOF
+
+    assert_equal(repo.refs.read_ref("refs/heads/main"),
+      @remote.repo.refs.read_ref("refs/heads/main"))
   end
 end
 
