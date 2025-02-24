@@ -15,9 +15,9 @@ months later.
   3.4.0][r3.4.0] became available, I switched to `it`. I didn't go back and
   change all existing instances, so this isn't completely consistent.
 - `SortedSet` was [removed] in Ruby 3.0, so I'm cheating and use the
-  [`sorted_set` gem][ssgem] an external depedency. Everything else is just
+  [`sorted_set` gem][ssgem] as an external dependency. Everything else is just
   standard library.
-- I use [Standard Ruby][standard] for code formatting
+- I use [Standard Ruby][standard] for code formatting.
 - I decided to not use `minitest/spec` for my tests (sticking with
   `minitest/test`). I somewhat regretted this later on as the book does lots of
   deep nesting in its tests, and that's painful to do without specs.
